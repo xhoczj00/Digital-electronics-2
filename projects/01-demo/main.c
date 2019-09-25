@@ -46,6 +46,6 @@ int main(void)
         PORTB ^= _BV(LED_PIN);      /* PORTB = PORTB xor (0010 0000) */
         _delay_ms(BLINK_DELAY);     /* Wait for several milisecs */
     }
-
+//
     return (0);
 }
