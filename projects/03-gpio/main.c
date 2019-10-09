@@ -1,15 +1,11 @@
     /*
  * ---------------------------------------------------------------------
- * Author:      Tomas Fryza
+ * Author:      Jan Hocz, Martin Kosut
  *              Dept. of Radio Electronics, Brno Univ. of Technology
- * Created:     2018-09-27
- * Last update: 2019-07-16
+ * Created:     2018-10-09
+ * Last update: 2019-10-09
  * Platform:    ATmega328P, AVR 8-bit Toolchain 3.6.2
  * ---------------------------------------------------------------------
- * Description: Blink a LED with delay function.
- * TODO: Verify functionality of LED blinker.
- * NOTE: Macro _BV converts a bit number into a byte value (see AVR Libc
- * Reference Manual).
  */
 
 /* Includes ----------------------------------------------------------*/
@@ -35,7 +31,6 @@
   */
 int main(void)
 {
- 
     GPIO_config_output(&DDRB, LED_PIN0);
     GPIO_config_output(&DDRB, LED_PIN1);
     GPIO_config_input_pullup(&DDRD, &PORTD, BUTTON);
@@ -50,6 +45,6 @@ int main(void)
             _delay_ms(BLINK_DELAY);
         }
     }
-//
+	
     return (0);
 }
