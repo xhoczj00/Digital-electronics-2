@@ -2,7 +2,20 @@
 ## Brno Univ. of Techn.
 Super repository of DE2 course at **Brno University of Technology**
 
-dgzxgbd
+Created by Jan Hocz and Martin Kosut
+
+
+
+
+
+
+
+
+
+
+
+
+Useful terminal commands
 ```
 ls			List directory
 cd			Change currnet directory
