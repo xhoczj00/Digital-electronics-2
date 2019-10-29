@@ -22,25 +22,23 @@
 #define BUTTON       PD2
 
 /* Variables ---------------------------------------------------------*/
+int i = 0;
 /* Function prototypes -----------------------------------------------*/
 
 /* Functions ---------------------------------------------------------*/
 /**
-  * Brief:  Main program. Blink a LED with delay function.
+  * Brief:  Main program. Interrupt configuration.
   * Input:  None
   * Return: None
   */
   
-    int i = 0;
+
 
 int main(void)
 {
-    
-    
     GPIO_config_output(&DDRB, LED_PIN0);
     GPIO_config_output(&DDRB, LED_PIN1);
-
-    
+	
     TIM_config_prescaler(TIM0, TIM_PRESC_1024);
     TIM_config_interrupt(TIM0, TIM_OVERFLOW_ENABLE);
 
@@ -59,6 +57,11 @@ int main(void)
     return (0);
 }
 
+/**
+  * Brief:  Toggle LEDs when timer 0, 1 overflows
+  * Input:  None
+  * Return: None
+  */
 ISR(TIMER0_OVF_vect)
 {
     i++;

@@ -82,7 +82,6 @@ void TIM_config_prescaler(uint8_t timer_name, uint8_t presc_val)
     /* Timer/Counter1 */
     else if (timer_name == TIM1) 
     {
-        // TODO: Set prescaler values for Timer/Counter1
         switch (presc_val) 
         {
             case TIM_PRESC_1:
@@ -125,7 +124,6 @@ void TIM_config_prescaler(uint8_t timer_name, uint8_t presc_val)
     /* Timer/Counter2 */
     else 
     {
-        // TODO: Set prescaler values for Timer/Counter2
         switch (presc_val) 
         {
             case TIM_PRESC_1:
@@ -201,7 +199,6 @@ void TIM_config_interrupt(uint8_t timer_name, uint8_t interr_mode)
     /* Timer/Counter1 */
     else if (timer_name == TIM1) 
     {
-        // TODO: Enable/disable interupt for Timer/Counter1
         switch (interr_mode) 
         {
             case TIM_OVERFLOW_ENABLE:
@@ -218,7 +215,6 @@ void TIM_config_interrupt(uint8_t timer_name, uint8_t interr_mode)
     /* Timer/Counter2 */
     else 
     {
-        // TODO: Enable/disable interupt for Timer/Counter2
         switch (interr_mode) 
         {
             case TIM_OVERFLOW_ENABLE:
