@@ -1,9 +1,9 @@
 /*
  * ---------------------------------------------------------------------
- * Author:      Tomas Fryza
+ * Author:      Martin Kosut, Jan Hocz
  *              Dept. of Radio Electronics, Brno Univ. of Technology
- * Created:     2018-10-16
- * Last update: 2019-10-25
+ * Created:     2018-10-30
+ * Last update: 2019-10-30
  * Platform:    ATmega328P, 16 MHz, AVR 8-bit Toolchain 3.6.2
  * ---------------------------------------------------------------------
  * Description:
@@ -30,23 +30,23 @@ uint8_t value = 0;
 char lcd_string[3];
 
 char customChar[] = {
-               0b01110,
-                0b10001,
-                0b01110,
-                0b00100,
-                0b11111,
-                0b00100,
-                0b01010,
-                0b10001,
-                0b00001,
-                0b00010,
-                0b10100,
-                0b01000,
-                0b10100,
-                0b00000,
-                0b00000,
-                0b00000
-                    };
+					0b01110,
+					0b10001,
+					0b01110,
+					0b00100,
+					0b11111,
+					0b00100,
+					0b01010,
+					0b10001,
+					0b00001,
+					0b00010,
+					0b10100,
+					0b01000,
+					0b10100,
+					0b00000,
+					0b00000,
+					0b00000
+						};
 
 /* Function prototypes -----------------------------------------------*/
 
@@ -58,35 +58,22 @@ char customChar[] = {
  */
 int main(void)
 {
-    /* LCD display
-     * TODO: See Peter Fleury's online manual for LCD library 
-     * http://homepage.hispeed.ch/peterfleury/avr-software.html
-     * Initialize display and test different types of cursor */
     lcd_init(LCD_DISP_ON);
     TIM_config_prescaler(TIM1,TIM_PRESC_64);
     TIM_config_interrupt(TIM1, TIM_OVERFLOW_ENABLE);
-    /* Timer1
-     * TODO: Configure Timer1 clock source and enable overflow 
-     *       interrupt */
-
-    /* TODO: Design at least two user characters and store them in 
-     *       the display memory */
-
-    // Enables interrupts by setting the global interrupt mask
     sei();
 
-    lcd_command(1<<LCD_CGRAM);
-    for(uint8_t i=0;i<16;i++)
+    lcd_command(1<<LCD_CGRAM);			//start of user memory
+    for(uint8_t i=0;i<16;i++)			//store 2 custom characters to RAM of lcd display
     {
         lcd_data(customChar[i]);
     }
     
-    lcd_clrscr();
+    lcd_clrscr();						//initialization
 
     lcd_gotoxy(0,0);
     lcd_puts("Counter: ");
-    
-    
+     
     lcd_gotoxy(0,1);
     lcd_putc('$');
 
@@ -96,6 +83,7 @@ int main(void)
     lcd_gotoxy(14,0);
     lcd_putc(0x00);
     lcd_putc(0x01);
+	
     // Infinite loop
     for (;;) 
     {
@@ -110,7 +98,7 @@ int main(void)
  *  Brief: Timer1 overflow interrupt routine. Increment counter value.
  */
 ISR(TIMER1_OVF_vect)
-{
+{										//update values each timer overflow
     value++;
     lcd_gotoxy(9,0);
     itoa(value, lcd_string, 10);    
@@ -129,8 +117,6 @@ ISR(TIMER1_OVF_vect)
         value = 0;
         lcd_clrscr();
 
-        
-        //lcd_puts("");
         lcd_gotoxy(0,0);
         lcd_puts("Counter: ");
         
@@ -145,6 +131,4 @@ ISR(TIMER1_OVF_vect)
         lcd_putc(0x00);
         lcd_putc(0x01);
     }
-
-    // TODO: Increment counter value form 0 to 255
 }
