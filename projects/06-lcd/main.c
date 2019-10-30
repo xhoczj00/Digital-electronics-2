@@ -18,7 +18,6 @@
 /* Includes ----------------------------------------------------------*/
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <util/delay.h>
 #include <stdlib.h>             // itoa() function
 #include "timer.h"
 #include "lcd.h"
@@ -26,6 +25,29 @@
 /* Typedef -----------------------------------------------------------*/
 /* Define ------------------------------------------------------------*/
 /* Variables ---------------------------------------------------------*/
+
+uint8_t value = 0;
+char lcd_string[3];
+
+char customChar[] = {
+               0b01110,
+                0b10001,
+                0b01110,
+                0b00100,
+                0b11111,
+                0b00100,
+                0b01010,
+                0b10001,
+                0b00001,
+                0b00010,
+                0b10100,
+                0b01000,
+                0b10100,
+                0b00000,
+                0b00000,
+                0b00000
+                    };
+
 /* Function prototypes -----------------------------------------------*/
 
 /* Functions ---------------------------------------------------------*/
@@ -41,29 +63,8 @@ int main(void)
      * http://homepage.hispeed.ch/peterfleury/avr-software.html
      * Initialize display and test different types of cursor */
     lcd_init(LCD_DISP_ON);
-
-    // Display string without auto linefeed
-
-    lcd_puts("LCD testing_1");
-    // TODO: Display variable value in decimal, binary, and hexadecimal
-    _delay_ms(4000);
-    lcd_clrscr();
-    lcd_init(LCD_DISP_ON_CURSOR);
-    lcd_gotoxy(3,1);
-    lcd_puts("dO_Ob");
-    lcd_home();
-    lcd_puts("   ___");
- 
-    _delay_ms(4000);
-    lcd_clrscr();
-    lcd_init(LCD_DISP_ON_CURSOR_BLINK);
-    lcd_puts("LCD testing_3");
-
-    _delay_ms(4000);
-    lcd_clrscr();
-    lcd_init(LCD_DISP_ON_CURSOR);
-    lcd_putc('B');
-    lcd_puts(" LCD testing_4");
+    TIM_config_prescaler(TIM1,TIM_PRESC_64);
+    TIM_config_interrupt(TIM1, TIM_OVERFLOW_ENABLE);
     /* Timer1
      * TODO: Configure Timer1 clock source and enable overflow 
      *       interrupt */
@@ -74,10 +75,31 @@ int main(void)
     // Enables interrupts by setting the global interrupt mask
     sei();
 
+    lcd_command(1<<LCD_CGRAM);
+    for(uint8_t i=0;i<16;i++)
+    {
+        lcd_data(customChar[i]);
+    }
+    
+    lcd_clrscr();
+
+    lcd_gotoxy(0,0);
+    lcd_puts("Counter: ");
+    
+    
+    lcd_gotoxy(0,1);
+    lcd_putc('$');
+
+    lcd_gotoxy(6,1);
+    lcd_puts("0b");
+    
+    lcd_gotoxy(14,0);
+    lcd_putc(0x00);
+    lcd_putc(0x01);
     // Infinite loop
     for (;;) 
     {
-
+        
     }
 
     // Will never reach this
@@ -89,5 +111,40 @@ int main(void)
  */
 ISR(TIMER1_OVF_vect)
 {
+    value++;
+    lcd_gotoxy(9,0);
+    itoa(value, lcd_string, 10);    
+    lcd_puts(lcd_string);
+
+    itoa(value, lcd_string, 16);
+    lcd_gotoxy(1,1);
+    lcd_puts(lcd_string);
+
+    itoa(value, lcd_string, 2);
+    lcd_gotoxy(8,1);
+    lcd_puts(lcd_string);
+
+    if(value == 255)
+    {
+        value = 0;
+        lcd_clrscr();
+
+        
+        //lcd_puts("");
+        lcd_gotoxy(0,0);
+        lcd_puts("Counter: ");
+        
+        
+        lcd_gotoxy(0,1);
+        lcd_putc('$');
+
+        lcd_gotoxy(6,1);
+        lcd_puts("0b");
+        
+        lcd_gotoxy(14,0);
+        lcd_putc(0x00);
+        lcd_putc(0x01);
+    }
+
     // TODO: Increment counter value form 0 to 255
 }
