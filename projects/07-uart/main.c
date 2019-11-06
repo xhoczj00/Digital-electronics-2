@@ -95,5 +95,8 @@ ISR(ADC_vect)
     lcd_clrscr();
     lcd_gotoxy(0,0);
     lcd_puts(uart_string);
+
+    uart_puts(uart_string);
+    uart_puts(" ");
     // TODO: Update LCD and UART transmiter
 }
