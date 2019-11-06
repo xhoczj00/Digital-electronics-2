@@ -16,6 +16,7 @@
 
 /* Includes ----------------------------------------------------------*/
 #include <stdlib.h>             // itoa() function
+#include <stdio.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "timer.h"
@@ -49,6 +50,7 @@ int main(void)
 
     // Display string without auto linefeed
     lcd_puts("LCD testing");
+    
     // Put string to ringbuffer for transmitting via UART.
     uart_puts("UART testing\r\n");
 
@@ -87,16 +89,59 @@ ISR(TIMER1_OVF_vect)
 ISR(ADC_vect)
 {
     uint16_t value = 0;
-    char uart_string[4];
+    char uart_string[6];
 
 	// Read 10-bit ACD value
     value = ADC;
-    itoa(value, uart_string, 10);
+
+    if(value < 90)
+    {
+        uart_puts("\r\n\033[4;32m");   
+        uart_puts("RIGHT");
+        uart_putc(' ');
+        uart_puts("\033[0m");  
+    }
+        
+    else if(value >= 90 && value <= 110)
+    {
+        uart_puts("\r\n\033[4;32m");   
+        uart_puts("UP");
+        uart_putc(' ');
+        uart_puts("\033[0m");  
+    }
+    else if(value >= 235 && value <= 280)
+    {
+        uart_puts("\r\n\033[4;32m");   
+        uart_puts("DOWN");
+        uart_putc(' ');
+        uart_puts("\033[0m");  
+    }   
+    else if(value >= 390 && value <= 430)
+    {
+        uart_puts("\r\n\033[4;32m");   
+        uart_puts("LEFT");
+        uart_putc(' ');
+        uart_puts("\033[0m");  
+    }  
+    else if(value >= 620 && value <= 680)
+    {
+        uart_puts("\r\n\033[4;32m");   
+        uart_puts("SELECT");
+        uart_putc(' ');
+        uart_puts("\033[0m");  
+    }   
+    else
+        uart_puts("\r\nNo selection");
+
+
     lcd_clrscr();
     lcd_gotoxy(0,0);
     lcd_puts(uart_string);
 
-    uart_puts(uart_string);
-    uart_puts(" ");
+    //uart_puts("\r\n\033[4;32m");   
+    //uart_puts(uart_string);
+    //uart_putc(' ');
+    //uart_puts("\033[0m");  
     // TODO: Update LCD and UART transmiter
+    
 }
