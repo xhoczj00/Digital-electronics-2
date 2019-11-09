@@ -1,9 +1,9 @@
 /*
  * ---------------------------------------------------------------------
- * Author:      Tomas Fryza
+ * Author:      Martin Kosut, Jan Hocz
  *              Dept. of Radio Electronics, Brno Univ. of Technology
- * Created:     2018-10-23
- * Last update: 2019-11-01
+ * Created:     2019-10-06
+ * Last update: 2019-11-09
  * Platform:    ATmega328P, 16 MHz, AVR 8-bit Toolchain 3.6.2
  * ---------------------------------------------------------------------
  * Description:
@@ -54,19 +54,18 @@ int main(void)
     // Put string to ringbuffer for transmitting via UART.
     uart_puts("UART testing\r\n");
 
-    /* ADC
-     * TODO: Configure ADC reference, clock source, enable ADC module, 
-     *       and enable conversion complete interrupt */
+    // ADC
     ADMUX &= ~(_BV(REFS1) | _BV(MUX0) | _BV(MUX1)| _BV(MUX2)| _BV(MUX3));
     ADMUX |= _BV(REFS0); 
     ADCSRA |= (_BV(ADEN) | _BV(ADIE) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0));
-    /* Timer1
-     * TODO: Configure Timer1 clock source and enable overflow 
-     *       interrupt */
+    
+	// Timer1
     TIM_config_prescaler(TIM1 ,TIM_PRESC_64);
     TIM_config_interrupt(TIM1 ,TIM_OVERFLOW_ENABLE);
-    // Infinite loop
-    for (;;) {
+    
+	// Infinite loop
+    for (;;) 
+	{
     }
 
     // Will never reach this
@@ -78,7 +77,6 @@ int main(void)
  */
 ISR(TIMER1_OVF_vect)
 {
-    // TODO: Start ADC conversion
     ADCSRA |= _BV(ADSC);
 }
 
@@ -96,52 +94,36 @@ ISR(ADC_vect)
 
     if(value < 90)
     {
-        uart_puts("\r\n\033[4;32m");   
-        uart_puts("RIGHT");
-        uart_putc(' ');
-        uart_puts("\033[0m");  
+        sprintf(uart_string, "RIGHT"); 
     }
         
     else if(value >= 90 && value <= 110)
     {
-        uart_puts("\r\n\033[4;32m");   
-        uart_puts("UP");
-        uart_putc(' ');
-        uart_puts("\033[0m");  
+        sprintf(uart_string, "UP"); 
     }
     else if(value >= 235 && value <= 280)
     {
-        uart_puts("\r\n\033[4;32m");   
-        uart_puts("DOWN");
-        uart_putc(' ');
-        uart_puts("\033[0m");  
+        sprintf(uart_string, "DOWN"); 
     }   
     else if(value >= 390 && value <= 430)
     {
-        uart_puts("\r\n\033[4;32m");   
-        uart_puts("LEFT");
-        uart_putc(' ');
-        uart_puts("\033[0m");  
+        sprintf(uart_string, "LEFT"); 
     }  
     else if(value >= 620 && value <= 680)
     {
-        uart_puts("\r\n\033[4;32m");   
-        uart_puts("SELECT");
-        uart_putc(' ');
-        uart_puts("\033[0m");  
+        sprintf(uart_string, "SELECT"); 
     }   
     else
-        uart_puts("\r\nNo selection");
+        sprintf(uart_string, "No selection"); 
 
 
     lcd_clrscr();
     lcd_gotoxy(0,0);
-    lcd_puts(uart_string);
-
-    //uart_puts("\r\n\033[4;32m");   
-    //uart_puts(uart_string);
-    //uart_putc(' ');
-    //uart_puts("\033[0m");  
-    // TODO: Update LCD and UART transmiter
-    
+	
+	uart_puts("\r\n\033[4;32m");   
+	uart_puts(uart_string);
+	uart_putc(' ');
+	uart_puts("\033[0m");  
+	
+    lcd_puts(uart_string);   
 }
