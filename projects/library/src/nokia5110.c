@@ -18,17 +18,7 @@
 #include <util/delay.h>
 #include "nokia5110_chars.h"
 
-#define PORT_LCD PORTB
-#define DDR_LCD DDRB
 
-/*
- * LCD's pins
- */
-#define LCD_SCE PB1
-#define LCD_RST PB2
-#define LCD_DC PB3
-#define LCD_DIN PB4
-#define LCD_CLK PB5
 
 static struct {
     /* screen byte massive */
