@@ -13,6 +13,9 @@
 /* Includes ----------------------------------------------------------*/
 #include <avr/io.h>
 #include <util/delay.h>
+#include "nokia5110.h"
+
+
 
 /* Typedef -----------------------------------------------------------*/
 /* Define ------------------------------------------------------------*/
@@ -24,6 +27,9 @@
 
 int main(void)
 {
+    nokia_lcd_init();
+    nokia_lcd_power(1);
+    nokia_lcd_write_string("const char *str", 3);
     /* Infinite loop */
     for (;;)
     {

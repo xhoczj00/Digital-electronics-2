@@ -30,4 +30,5 @@ TBD
 
 1. Microchip, [AVR 8-bit Toolchain for Windows, Linux, Mac OS X](https://www.microchip.com/mplab/avr-support/avr-and-arm-toolchains-c-compilers)
 2. BANK Larry, [Nokia 5110 C library](https://github.com/bitbank2/nokia5110)
-3. E-Tinkers, [Nokia5110 LCD Image Creator](https://www.e-tinkers.com/nokia5110-lcd-image-creator/)
+3. DENISOV Sergey, [Another Nokia 5110 C library](https://github.com/LittleBuster/avr-nokia5110)
+4. E-Tinkers, [Nokia5110 LCD Image Creator](https://www.e-tinkers.com/nokia5110-lcd-image-creator/)
