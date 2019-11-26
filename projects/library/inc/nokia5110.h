@@ -85,5 +85,8 @@ void nokia_lcd_set_cursor(uint8_t x, uint8_t y);
  */
 void nokia_lcd_render(void);
 
-
+/*
+ * Print 84x48 LOGO picture on display
+ */
+ void nokia_lcd_write_picture(void);
 #endif

@@ -202,3 +202,19 @@ void nokia_lcd_render(void)
 	for (i = 0; i < 504; i++)
 		write_data(nokia_lcd.screen[i]);
 }
+
+/------------------------------------------------------------------------------/
+
+void nokia_lcd_write_picture(void)
+{
+	register uint8_t x, y;
+	
+	nokia_lcd_set_cursor(0, 0);
+	
+	for (x = 0; x < 48; x++)
+		for (y = 0; y < 7; y++)
+			if (pgm_read_byte(&LOGO[x]) & (1 << y))
+				nokia_lcd_set_pixel(nokia_lcd.cursor_x + x, nokia_lcd.cursor_y + y, 1);
+			else
+				nokia_lcd_set_pixel(nokia_lcd.cursor_x + x, nokia_lcd.cursor_y + y, 0);
+}
