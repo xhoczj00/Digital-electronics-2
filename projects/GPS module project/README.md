@@ -6,7 +6,8 @@
 1. [Introduction](#introduction)
 2. [Hardware](#hardware)
 3. [Software](#software)
-4. [References](#references)
+4. [Commit tags](#Commit_tags)
+5. [References](#references)
 
 
 ## Introduction
@@ -17,14 +18,20 @@ Recieved data should be displayed on Nokia 5110 display and stored in PC.
 
 ## Hardware
 
-Microcontroller - ATmega328p
-GPS Module - ###########
-Display - LCD 5110 (PCD 8544)
+- Microcontroller - ATmega328p
+- GPS Module - PA6H
+- Display - LCD 5110 (PCD 8544)
 
 ## Software
 
 TBD
 
+## Commit_tags
+
+- GENERAL - Commits with general changes 
+- GPS - Commits with changes in GPS code
+- DISPLAY - Commits with changes in DISPLAY code
+- COMMUNICATION - Commits with changes in communication code
 
 ## References
 
