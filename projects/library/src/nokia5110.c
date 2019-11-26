@@ -203,18 +203,29 @@ void nokia_lcd_render(void)
 		write_data(nokia_lcd.screen[i]);
 }
 
-/------------------------------------------------------------------------------/
+/*------------------------------------------------------------------------------*/
 
 void nokia_lcd_write_picture(void)
 {
-	register uint8_t x, y;
+	register uint8_t x, y, i;
 	
-	nokia_lcd_set_cursor(0, 0);
+	nokia_lcd_set_cursor(0, 0); 
 	
-	for (x = 0; x < 48; x++)
-		for (y = 0; y < 7; y++)
-			if (pgm_read_byte(&LOGO[x]) & (1 << y))
-				nokia_lcd_set_pixel(nokia_lcd.cursor_x + x, nokia_lcd.cursor_y + y, 1);
-			else
-				nokia_lcd_set_pixel(nokia_lcd.cursor_x + x, nokia_lcd.cursor_y + y, 0);
+	for(i = 0;i<6;i++) // shifting y position 8 pixels lower  
+	{	
+		for (x = 0; x < 84; x++) // shifting x position in 1 row
+		{
+			for (y = 0; y < 7; y++) // printing 1 byte of data which represent 8 pixels in column
+			{
+				if (pgm_read_byte(&LOGO[(i*84)+x]) & (1 << y))
+					nokia_lcd_set_pixel(nokia_lcd.cursor_x + x, nokia_lcd.cursor_y + y, 1);
+				else
+					nokia_lcd_set_pixel(nokia_lcd.cursor_x + x, nokia_lcd.cursor_y + y, 0);
+			}
+		}
+		nokia_lcd.cursor_x = 0;
+		nokia_lcd.cursor_y = (i+1)*8; 
+	}
+	nokia_lcd.cursor_x = 0;
+	nokia_lcd.cursor_y = 0;
 }
