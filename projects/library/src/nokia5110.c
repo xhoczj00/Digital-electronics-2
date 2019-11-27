@@ -213,6 +213,8 @@ void nokia_lcd_write_picture(void)
 	
 	for(i = 0;i<6;i++) // shifting y position 8 pixels lower  
 	{	
+		nokia_lcd.cursor_x = 0;
+		nokia_lcd.cursor_y = (i)*8; 
 		for (x = 0; x < 84; x++) // shifting x position in 1 row
 		{
 			for (y = 0; y < 7; y++) // printing 1 byte of data which represent 8 pixels in column
@@ -223,8 +225,7 @@ void nokia_lcd_write_picture(void)
 					nokia_lcd_set_pixel(nokia_lcd.cursor_x + x, nokia_lcd.cursor_y + y, 0);
 			}
 		}
-		nokia_lcd.cursor_x = 0;
-		nokia_lcd.cursor_y = (i+1)*8; 
+		
 	}
 	nokia_lcd.cursor_x = 0;
 	nokia_lcd.cursor_y = 0;
