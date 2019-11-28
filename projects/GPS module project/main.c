@@ -13,6 +13,9 @@
 /* Includes ----------------------------------------------------------*/
 #include <avr/io.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h> 
+#include <avr/interrupt.h>
 #include <util/delay.h>
 #include "nokia5110.h"
 #include "uart.h"
@@ -20,49 +23,49 @@
 #define UART_BAUD_RATE 9600
 
 
-/* Typedef -----------------------------------------------------------*/
-/* Define ------------------------------------------------------------*/
-
-/* Variables ---------------------------------------------------------*/
-/* Function prototypes -----------------------------------------------*/
-
-/* Functions ---------------------------------------------------------*/
 
 
 int main(void)
 {
-    uint8_t S,i;
-    uint8_t COMM[85];
-    
+    sei();
+    char rcv_data[600];
+    uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
+
     nokia_lcd_init();
     nokia_lcd_power(1);
-    nokia_lcd_write_picture();
+    //nokia_lcd_write_picture();
     nokia_lcd_render();
-     _delay_ms(1000);
-     nokia_lcd_clear();
-     nokia_lcd_render();
+    // _delay_ms(1000);
+     //nokia_lcd_clear();
+    // nokia_lcd_render();
     /* Infinite loop */
     //char i = 0,j = 0;
     
-    uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
+   
 
-    uart_puts("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29");
+    
 
     for (;;)
     {
-     S = uart_getc();
-     if (S == '$')
-     {
-        for(i = 0;i<85;i++)
+     //S = uart_getc();
+        for(int i = 0; i < 400; i++)
         {
-            COMM[i] = uart_getc();
-            nokia_lcd_write_char(COMM[i], 1);
-            nokia_lcd_render();
+            rcv_data[i] = uart_getc();
+            if(rcv_data[i] == 0x0A)
+                break;
+            
         }
+        //sprintf(rcv_data, rcv_data); 
         
         nokia_lcd_clear();
+        nokia_lcd_set_cursor(0,0);
+        nokia_lcd_write_string(rcv_data,1);
+        
         nokia_lcd_render();
+
+        _delay_ms(300);
      }
+
       /*  for(int k = 0; k<84;k++)
         {
             nokia_lcd_set_pixel(i, j, 1);
@@ -84,7 +87,7 @@ int main(void)
         
 
        
-    }
+    //}
 //
     return (0);
 }
