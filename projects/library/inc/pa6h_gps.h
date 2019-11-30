@@ -9,17 +9,20 @@
 #ifndef PA6H_GPS_H_
 #define PA6H_GPS_H_
 
+#include <stdbool.h>
+
 typedef struct GPS_data
 {
+	bool valid;
 	char time[6];
 	char date[6];
-	float latitude;
+	char latitude[9];
 	char lat_dir;
-	float longtitude;
+	char longtitude[10];
 	char lon_dir;
-	int speed_kn;
-	int speed_kmh;
-	float course;
+	char speed_kn[7];
+	char speed_kmh[7];
+	char course[6];
 	char num_of_act_sats;
 	//char num_of_view_sats;
 	float altitude;
@@ -36,6 +39,13 @@ typedef struct GPS_msgs
 	char GPGSV1_msg[83];
 	char GPGSV2_msg[83];
 	char GPGSV3_msg[83];
+	bool GPRMC_fresh;
+	bool GPVTG_fresh;
+	bool GPGGA_fresh;
+	bool GPGSA_fresh;
+	bool GPGSV1_fresh;
+	bool GPGSV2_fresh;
+	bool GPGSV3_fresh;
 }T_GPS_msgs;
 
 
@@ -50,7 +60,7 @@ void gps_get_data(void);
 			 stop is index of position where it stops 
  *  @return  stop index
  */
-int msg_split(char *rcv_msg, int start, int stop);
+int frame_split(char *rcv_msg, int start, int stop);
 
 /**
  *  @brief   Count number of character in string until end character
@@ -72,6 +82,7 @@ int count_string(char *string, int start, char end_character);
  */
 char compare_two_strings(char *str1, char *str2, int length);
 
+int parsing_data(void);
 
 
 
