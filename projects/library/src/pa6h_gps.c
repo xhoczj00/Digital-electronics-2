@@ -7,12 +7,13 @@
 
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include "pa6h_gps.h"
 #include "uart.h"
 //
-char rcv_data[550] = "$GPRMC,080423.000,A,4913.6146,N,01634.4190,E,0.30,70.31,271119,,,A*5E\r\n$GPVTG,70.31,T,,M,0.30,N,0.55,K,A*0B\r\n$GPGGA,080424.000,4913.6146,N,01634.4188,E,1,6,2.13,288.2,M,43.5,M,,*5D\r\n$GPGSA,A,3,01,03,23,11,19,17,,,,,,,2.33,2.13,0.94*00\r\n$GPGSV,3,1,12,01,75,146,25,03,64,276,30,11,54,185,29,17,34,303,32*78\r\n$GPGSV,3,2,12,23,28,205,22,31,24,092,22,19,21,319,28,40,17,124,*77\r\n$GPGSV,3,3,12,08,03,182,,09,01,213,,22,,,20,14,,,21*76\r\n";
+char rcv_data[550] = "$GPRMC,080423.000,A,4913.6146,N,11634.4190,E,0.30,70.31,271119,,,A*5E\r\n$GPVTG,81.42,T,,M,1.55,N,0.55,K,A*0B\r\n$GPGGA,080424.000,4913.6146,N,11634.4188,E,1,6,2.13,288.2,M,43.5,M,,*5D\r\n$GPGSA,A,3,01,03,23,11,19,17,,,,,,,2.33,2.13,0.94*00\r\n$GPGSV,3,1,12,01,75,146,25,03,64,276,30,11,54,185,29,17,34,303,32*78\r\n$GPGSV,3,2,12,23,28,205,22,31,24,092,22,19,21,319,28,40,17,124,*77\r\n$GPGSV,3,3,12,08,03,182,,09,01,213,,22,,,20,14,,,21*76\r\n";
 //"$GPRMC,235947.799,V,,,,,0.00,0.00,050180,,,N*48\r\n$GPVTG,0.00,T,,M,0.00,N,0.00,K,N*32\r\n$GPGGA,235948.799,,,,,0,0,,,M,,M,,*4E\r\n$GPGSA,A,1,,,,,,,,,,,,,,,*1E\r\n";
 
 T_GPS_msgs msg;
@@ -139,7 +140,7 @@ void gps_get_data(void)
 	/*for(int i = 0; i < 600; i++)				//receive all messages
 	{
 		rcv_data[i] = uart_getc();
-		if(rcv_data[i] == UART_NO_DATA)
+		if(rcv_data[i] == UART_NO_DATA || rcv_data[i] == UART_FRAME_ERROR)
 			break;
 	}
 	*/
@@ -156,17 +157,15 @@ void gps_get_data(void)
 	stop = count_string(&rcv_data, start, '\n');		//stop position of first message out of frame
 	while(length < 83)									//NMEA messages are always less than 83 characters
 	{
-		start = frame_split(&rcv_data, start, stop);		//split message and return start position for new message
+		start = frame_split(&rcv_data, start, stop);	//split message and return start position for new message
 		stop = count_string(&rcv_data, ++start, '\n');	//find next end of message
 		length = stop - start;							
 	}
 	
-	parsing_data();
-	
-		
+	parse_data();
 }
 
-int split_message(char *source, char *target, int start, int stop)
+int split_message(char *source, char *target, int start, int stop)	//copy data from source to target array between start and stop index
 {
 	int i;
 	
@@ -176,44 +175,156 @@ int split_message(char *source, char *target, int start, int stop)
 	}
 	return stop;
 }
-int parsing_data()
+void parse_data(void)						//analyze data from fresh messages
 {
-	
 	volatile int start = 7, stop = 0;	//must be volatile for debug
 
-	if(msg.GPRMC_msg[18] == 'V')		//invalid messages
+	if(msg.GPRMC_msg[18] == 'V')		//if invalid messages return
 	{
 		data.valid = false;
-		return 0;						//parse data only if valid
+		return 0;						
 	}
-	else if(msg.GPRMC_msg[18] == 'A')	//valid messages
+	else if(msg.GPRMC_msg[18] == 'A')	//parse data only if messages are valid
 		data.valid = true;
 
 	//GPRMC=========================================================================================
-	stop = count_string(&msg.GPRMC_msg, start, ',');
-	start = split_message(&msg.GPRMC_msg, &data.time, start, stop - 4);		//time
+	if(msg.GPRMC_fresh == true)												//minimum GPS data
+	{
+		stop = count_string(&msg.GPRMC_msg, start, ',');
+		start = split_message(&msg.GPRMC_msg, &data.time, start, stop - 4);			//time
 	
-	start = stop + 3;						//jump over validity
-	stop = count_string(&msg.GPRMC_msg, start, ',');
-	start = split_message(&msg.GPRMC_msg, &data.latitude, start, stop);		//latitude
-	data.lat_dir = msg.GPRMC_msg[++start];
+		start = stop + 3;						//jump over validity
+		stop = count_string(&msg.GPRMC_msg, start, ',');
+		start = split_message(&msg.GPRMC_msg, &data.latitudeNMEA, start, stop);		//latitude
+		data.lat_dir = msg.GPRMC_msg[++start];
+		data.latitude_deg = NMEAtoDeg(&data.latitudeNMEA);
 	
-	start += 2;
-	stop = count_string(&msg.GPRMC_msg, start, ',');
-	start = split_message(&msg.GPRMC_msg, &data.longtitude, start, stop);	//longtitude
-	data.lon_dir = msg.GPRMC_msg[++start];
+		start += 2;
+		stop = count_string(&msg.GPRMC_msg, start, ',');
+		start = split_message(&msg.GPRMC_msg, &data.longitudeNMEA, start, stop);	//longitude
+		data.lon_dir = msg.GPRMC_msg[++start];
+		data.longitude_deg = NMEAtoDeg(&data.longitudeNMEA);
 	
-	start += 2;
-	stop = count_string(&msg.GPRMC_msg, start, ',');
-	start = split_message(&msg.GPRMC_msg, &data.speed_kn, start, stop);		//speed in knots
+		start += 2;
+		stop = count_string(&msg.GPRMC_msg, start, ',');
+		start = split_message(&msg.GPRMC_msg, &data.speed_kn, start, stop);			//speed in knots
 	
-	start++;
-	stop = count_string(&msg.GPRMC_msg, start, ',');
-	start = split_message(&msg.GPRMC_msg, &data.course, start, stop);		//course
+		start++;
+		stop = count_string(&msg.GPRMC_msg, start, ',');
+		start = split_message(&msg.GPRMC_msg, &data.course, start, stop);			//course
 	
-	start++;
-	stop = count_string(&msg.GPRMC_msg, start, ',');
-	start = split_message(&msg.GPRMC_msg, &data.date, start, stop);			//date
-	//==============================================================================================
+		start++;
+		stop = count_string(&msg.GPRMC_msg, start, ',');
+		start = split_message(&msg.GPRMC_msg, &data.date, start, stop);				//date
+	}
+	//GPVTG==========================================================================================
+	start = 7;														//speed and track info
+	stop = 0;
+	if(msg.GPVTG_fresh == true)
+	{
+		stop = count_string(&msg.GPVTG_msg, start, ',');
+		start = split_message(&msg.GPVTG_msg, &data.course, start, stop);		//course
+		
+		start += 6;
+		stop = count_string(&msg.GPVTG_msg, start, ',');
+		start = split_message(&msg.GPVTG_msg, &data.speed_kn, start, stop);		//speed in knots
+		
+		start += 3;
+		stop = count_string(&msg.GPVTG_msg, start, ',');
+		start = split_message(&msg.GPVTG_msg, &data.speed_kmh, start, stop);	//speed in knots
+		
+	}
+	//GPGGA==============================================================================================
+	start = 7;													//GPS fix info
+	stop = 0;
+	if(msg.GPGGA_fresh == true)
+	{
+		stop = count_string(&msg.GPGGA_msg, start, ',');
+		start = split_message(&msg.GPGGA_msg, &data.time, start, stop - 4);			//time
+		
+		start += 5;
+		stop = count_string(&msg.GPGGA_msg, start, ',');
+		start = split_message(&msg.GPGGA_msg, &data.latitudeNMEA, start, stop);		//latitude
+		data.lat_dir = msg.GPGGA_msg[++start];
+		data.latitude_deg = NMEAtoDeg(&data.latitudeNMEA);
+		
+		start += 2;
+		stop = count_string(&msg.GPGGA_msg, start, ',');
+		start = split_message(&msg.GPGGA_msg, &data.longitudeNMEA, start, stop);	//longitude
+		data.lon_dir = msg.GPGGA_msg[++start];
+		data.longitude_deg = NMEAtoDeg(&data.longitudeNMEA);
+		
+		start += 4;
+		stop = count_string(&msg.GPGGA_msg, start, ',');
+		start = split_message(&msg.GPGGA_msg, &data.num_of_act_sats, start, stop);	//number of active satellites
+
+		start += 6;
+		stop = count_string(&msg.GPGGA_msg, start, ',');
+		start = split_message(&msg.GPGGA_msg, &data.altitude, start, stop);			//altitude
+
+	}
+	//GPGSA==============================================================================================
+	/*start = 7;												//IDs of active satellites
+	stop = 0;
+	if(msg.GPGSA_fresh == true)
+	{
+		
+	}
+	*/
+	
+	//GPGSV==============================================================================================
+	start = 11;													//number and IDs of satellites in view
+	stop = 0;
+	if(msg.GPGSV1_fresh == true)
+	{
+		stop = count_string(&msg.GPGSV1_msg, start, ',');
+		start = split_message(&msg.GPGSV1_msg, &data.num_of_view_sats, start, stop);	//number of satellites in view
+	}
+	/*
+	if(msg.GPGSV2_fresh == true)
+	{
+		
+	}
+	if(msg.GPGSV3_fresh == true)
+	{
+		
+	}
+	*/
+	
 }
+
+float NMEAtoDeg(char *NMEA)
+{
+	char decimal[4] ;
+	char fraction[7] ;
+	int i,counter;
+	float result;
+
+	counter = count_string(NMEA,0,'.');
+	if(counter == 4)
+	{
+		
+		decimal[0] = NMEA[0];
+		decimal[1] = NMEA[1];
+		decimal[2] = 'A';			//for atof function
+	}
+	else if (counter == 5)
+	{
+		
+		decimal[0] = NMEA[0];
+		decimal[1] = NMEA[1];
+		decimal[2] = NMEA[2];
+		decimal[3] = 'A';			//for atof function
+	}
+
+	for(i = 0; i < 7; i++)
+	{
+		fraction[i] = NMEA[i+counter-2];
+	}
+	
+	result = atof(decimal) + (atof(fraction) / 60);
+	return result;
+}
+
+
 

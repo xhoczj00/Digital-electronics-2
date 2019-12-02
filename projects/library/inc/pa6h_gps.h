@@ -16,18 +16,20 @@ typedef struct GPS_data
 	bool valid;
 	char time[6];
 	char date[6];
-	char latitude[9];
+	char latitudeNMEA[9];
 	char lat_dir;
-	char longtitude[10];
+	float latitude_deg;
+	char longitudeNMEA[10];
 	char lon_dir;
+	float longitude_deg;
 	char speed_kn[7];
 	char speed_kmh[7];
 	char course[6];
-	char num_of_act_sats;
-	//char num_of_view_sats;
-	float altitude;
-	float alt_accuracy;
-	char active_sats[11];
+	char num_of_act_sats[2];
+	char num_of_view_sats[2];
+	char altitude[7];
+	//float alt_accuracy;
+	//char active_sats[11];
 }T_GPS_data;
 
 typedef struct GPS_msgs
@@ -82,7 +84,26 @@ int count_string(char *string, int start, char end_character);
  */
 char compare_two_strings(char *str1, char *str2, int length);
 
-int parsing_data(void);
+/**
+ *  @brief   Analyze data from fresh messages and copy them into data structure
+ */
+void parse_data(void);
+
+/**
+ *  @brief   Copy data from source to target array between start and stop index
+ *
+ *  @param   source, target is input strings
+ *  @return  stop index
+ */
+int split_message(char *source, char *target, int start, int stop);
+
+/**
+ *  @brief   Converting NMEA latitude and longitude format to degrees
+ *
+ *  @param   NMEA is input string in NMEA format
+ *  @return  converted float
+ */
+float NMEAtoDeg(char *NMEA);
 
 
 
