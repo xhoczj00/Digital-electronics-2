@@ -19,32 +19,38 @@
 #include <util/delay.h>
 #include "nokia5110.h"
 #include "uart.h"
+#include "pa6h_gps.h"
+#include "gpio.h"
 
 #define UART_BAUD_RATE 9600
-
+#define LED_PIN0     PD4
 
 
 
 int main(void)
 {
-    sei();
-    char rcv_data[600];
+    GPIO_config_output(&DDRD, LED_PIN0);
+    GPIO_write(&DDRD,LED_PIN0,1);
     uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
-
+    //uart_init(9600);
     nokia_lcd_init();
     nokia_lcd_power(1);
-    //nokia_lcd_write_picture();
+    nokia_lcd_write_picture();
     nokia_lcd_render();
-    // _delay_ms(1000);
-     //nokia_lcd_clear();
-    // nokia_lcd_render();
-    /* Infinite loop */
-    //char i = 0,j = 0;
+     _delay_ms(1000);
+     nokia_lcd_clear();
+    nokia_lcd_render();
+    for(;;)
+    {
     
+        //nokia_lcd_set_cursor(0,0);
+        gps_get_data();
+        //nokia_lcd_render();
+    }
    
 
     
-
+    /*
     for (;;)
     {
      //S = uart_getc();
@@ -65,7 +71,7 @@ int main(void)
 
         _delay_ms(300);
      }
-
+    */
       /*  for(int k = 0; k<84;k++)
         {
             nokia_lcd_set_pixel(i, j, 1);

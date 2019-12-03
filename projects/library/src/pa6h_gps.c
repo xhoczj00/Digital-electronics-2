@@ -10,15 +10,19 @@
 #include <stdlib.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <util/delay.h>
 #include "pa6h_gps.h"
 #include "uart.h"
+#include "nokia5110.h"
+#include "gpio.h"
+
+#define LED_PIN0     PD4
 //
-char rcv_data[550] = "$GPRMC,080423.000,A,4913.6146,N,11634.4190,E,0.30,70.31,271119,,,A*5E\r\n$GPVTG,81.42,T,,M,1.55,N,0.55,K,A*0B\r\n$GPGGA,080424.000,4913.6146,N,11634.4188,E,1,6,2.13,288.2,M,43.5,M,,*5D\r\n$GPGSA,A,3,01,03,23,11,19,17,,,,,,,2.33,2.13,0.94*00\r\n$GPGSV,3,1,12,01,75,146,25,03,64,276,30,11,54,185,29,17,34,303,32*78\r\n$GPGSV,3,2,12,23,28,205,22,31,24,092,22,19,21,319,28,40,17,124,*77\r\n$GPGSV,3,3,12,08,03,182,,09,01,213,,22,,,20,14,,,21*76\r\n";
+char rcv_data[550]; //= "$GPRMC,080423.000,A,4913.6146,N,11634.4190,E,0.30,70.31,271119,,,A*5E\r\n$GPVTG,81.42,T,,M,1.55,N,0.55,K,A*0B\r\n$GPGGA,080424.000,4913.6146,N,11634.4188,E,1,6,2.13,288.2,M,43.5,M,,*5D\r\n$GPGSA,A,3,01,03,23,11,19,17,,,,,,,2.33,2.13,0.94*00\r\n$GPGSV,3,1,12,01,75,146,25,03,64,276,30,11,54,185,29,17,34,303,32*78\r\n$GPGSV,3,2,12,23,28,205,22,31,24,092,22,19,21,319,28,40,17,124,*77\r\n$GPGSV,3,3,12,08,03,182,,09,01,213,,22,,,20,14,,,21*76\r\n";
 //"$GPRMC,235947.799,V,,,,,0.00,0.00,050180,,,N*48\r\n$GPVTG,0.00,T,,M,0.00,N,0.00,K,N*32\r\n$GPGGA,235948.799,,,,,0,0,,,M,,M,,*4E\r\n$GPGSA,A,1,,,,,,,,,,,,,,,*1E\r\n";
 
 T_GPS_msgs msg;
 T_GPS_data data;
-
 
 
 int frame_split(char *rcv_msg, int start, int stop)	//splitting messages out of frame and adding them in GPS_msgs structure
@@ -134,10 +138,46 @@ char compare_two_strings(char *str1, char *str2, int length)		//comparing two st
 
 void gps_get_data(void)
 {
-	int  length = 0, start = 0, stop = 0;
+	GPIO_write(&DDRD,LED_PIN0,1);
+	int  i = 0,length = 0, start = 0, stop = 0;
+	char c;
 	//char one_msg[83];
 	sei();
-	/*for(int i = 0; i < 600; i++)				//receive all messages
+	//uart_gets(&rcv_data);
+	
+
+	//rcv_data[0] = uart_getc();   //get character
+	//rcv_data[1] = uart_getc();
+	//rcv_data[2] = uart_getc();
+	//rcv_data[3] = uart_getc();
+	//rcv_data[4] = uart_getc();
+	//rcv_data[5] = uart_getc();
+	//rcv_data[6] = uart_getc();
+	/*for(i = 0; i < 550; i++)
+	{
+		rcv_data[i] = uart_getc();
+		//nokia_lcd_write_string(rcv_data,1);
+		
+	}*/
+	c = uart_getc();
+
+    //_delay_ms(10);
+    
+    if(c & UART_NO_DATA)  //If there's no data return function
+    {
+    	return;
+    }
+/*
+    while(!(c & UART_NO_DATA)) //while there is data, fill array with characters
+    {
+		rcv_data[i] = c;
+		i++;
+		c = uart_getc();
+    }
+	*/
+	GPIO_write(&DDRD,LED_PIN0,0);
+
+/*	for(int i = 0; i < 550; i++)				//receive all messages
 	{
 		rcv_data[i] = uart_getc();
 		if(rcv_data[i] == UART_NO_DATA || rcv_data[i] == UART_FRAME_ERROR)
@@ -162,7 +202,8 @@ void gps_get_data(void)
 		length = stop - start;							
 	}
 	
-	parse_data();
+	//parse_data();
+	
 }
 
 int split_message(char *source, char *target, int start, int stop)	//copy data from source to target array between start and stop index
