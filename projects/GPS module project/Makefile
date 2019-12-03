@@ -20,9 +20,10 @@ SRCS := $(wildcard *.c)
 SRCS += $(LIBRARY_DIR)/src/uart.c
 #SRCS += $(LIBRARY_DIR)/src/twi.c
 #SRCS += $(LIBRARY_DIR)/src/timer.c
-#SRCS += $(LIBRARY_DIR)/src/gpio.c
+SRCS += $(LIBRARY_DIR)/src/gpio.c
 #SRCS += $(LIBRARY_DIR)/src/segment.c
 SRCS += $(LIBRARY_DIR)/src/nokia5110.c
+SRCS += $(LIBRARY_DIR)/src/pa6h_gps.c
 ASSRC := $(wildcard *.S)
 
 
