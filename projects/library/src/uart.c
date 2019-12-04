@@ -357,13 +357,13 @@ static volatile unsigned char UART1_LastRxError;
 #endif
 
 
-ISR(UART0_RECEIVE_INTERRUPT)
+/*ISR(UART0_RECEIVE_INTERRUPT)
 
 /*************************************************************************
  * Function: UART Receive Complete interrupt
  * Purpose:  called when the UART has received a character
  **************************************************************************/
-{
+/*{
     unsigned char tmphead;
     unsigned char data;
     unsigned char usr;
@@ -371,11 +371,11 @@ ISR(UART0_RECEIVE_INTERRUPT)
 
 
     /* read UART status register and UART data register */
-    usr  = UART0_STATUS;
+/*    usr  = UART0_STATUS;
     data = UART0_DATA;
 
     /* get FEn (Frame Error) DORn (Data OverRun) UPEn (USART Parity Error) bits */
-    #if defined(FE) && defined(DOR) && defined(UPE)
+ /*   #if defined(FE) && defined(DOR) && defined(UPE)
     lastRxError = usr & (_BV(FE) | _BV(DOR) | _BV(UPE) );
     #elif defined(FE0) && defined(DOR0) && defined(UPE0)
     lastRxError = usr & (_BV(FE0) | _BV(DOR0) | _BV(UPE0) );
@@ -386,24 +386,24 @@ ISR(UART0_RECEIVE_INTERRUPT)
     #endif
 
     /* calculate buffer index */
-    tmphead = ( UART_RxHead + 1) & UART_RX_BUFFER_MASK;
+ //   tmphead = ( UART_RxHead + 1) & UART_RX_BUFFER_MASK;
 
-    if (tmphead == UART_RxTail)
+ /*   if (tmphead == UART_RxTail)
     {
         /* error: receive buffer overflow */
-        lastRxError = UART_BUFFER_OVERFLOW >> 8;
+/*        lastRxError = UART_BUFFER_OVERFLOW >> 8;
     }
     else
     {
         /* store new index */
-        UART_RxHead = tmphead;
+/*        UART_RxHead = tmphead;
         /* store received data in buffer */
-        UART_RxBuf[tmphead] = data;
+/*        UART_RxBuf[tmphead] = data;
     }
     UART_LastRxError |= lastRxError;
 }
 
-
+*/
 ISR(UART0_TRANSMIT_INTERRUPT)
 
 /*************************************************************************

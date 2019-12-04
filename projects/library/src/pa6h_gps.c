@@ -173,7 +173,12 @@ void gps_get_data(char *received_data)
 		stop = count_string(received_data, ++start, '\n');	//find next end of message
 		length = stop - start;							
 	}
-	
+
+	//nokia_lcd_set_cursor(0,0);
+	//nokia_lcd_write_string(msg.GPRMC_msg,1);
+	//nokia_lcd_write_string(msg.GPVTG_msg,1);
+	//nokia_lcd_render();
+	sei();
 	//parse_data();
 }
 
