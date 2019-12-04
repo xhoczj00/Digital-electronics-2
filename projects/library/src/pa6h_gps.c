@@ -17,10 +17,7 @@
 //
 T_GPS_msgs msg;
 T_GPS_data data;
-char* return_buffer_ptr(void)
-{
-	return &rcv_data[0];
-}
+
 
 int frame_split(char *rcv_msg, int start, int stop)	//splitting messages out of frame and adding them in GPS_msgs structure
 {
@@ -129,33 +126,16 @@ char compare_two_strings(char *str1, char *str2, int length)		//comparing two st
 		break;
 	}
 	if(i == length)
-	return 1;
+		return 1;
 	else
-	return 0;
+		return 0;
 }
 
 
 void gps_get_data(char *received_data)
 {
 	int  i, length = 0, start = 0, stop = 0;
-	//char array[550] = "$GPRMC,080423.000,A,4913.6146,N,11634.4190,E,0.30,70.31,271119,,,A*5E\r\n$GPVTG,81.42,T,,M,1.55,N,0.55,K,A*0B\r\n$GPGGA,080424.000,4913.6146,N,11634.4188,E,1,6,2.13,288.2,M,43.5,M,,*5D\r\n$GPGSA,A,3,01,03,23,11,19,17,,,,,,,2.33,2.13,0.94*00\r\n$GPGSV,3,1,12,01,75,146,25,03,64,276,30,11,54,185,29,17,34,303,32*78\r\n$GPGSV,3,2,12,23,28,205,22,31,24,092,22,19,21,319,28,40,17,124,*77\r\n$GPGSV,3,3,12,08,03,182,,09,01,213,,22,,,20,14,,,21*76\r\n";
-	//"$GPRMC,235947.799,V,,,,,0.00,0.00,050180,,,N*48\r\n$GPVTG,0.00,T,,M,0.00,N,0.00,K,N*32\r\n$GPGGA,235948.799,,,,,0,0,,,M,,M,,*4E\r\n$GPGSA,A,1,,,,,,,,,,,,,,,*1E\r\n";
 	
-	//for(i = 0; i<550; i++)
-	//	rcv_data[i] = array[i];
-	
-	
-	
-	
-	//char one_msg[83];
-	//sei();
-	/*for(int i = 0; i < 600; i++)				//receive all messages
-	{
-		rcv_data[i] = uart_getc();
-		if(rcv_data[i] == UART_NO_DATA || rcv_data[i] == UART_FRAME_ERROR)
-			break;
-	}
-	*/
 	cli();
 	
 	msg.GPRMC_fresh = false;
@@ -182,6 +162,40 @@ void gps_get_data(char *received_data)
 	//parse_data();
 }
 
+char check_checksum(char *message)			//calculate checksum from all characters between $ and * compare it to received checksum after * in NMEA message
+{
+	volatile int start = 0, stop = 0, i;
+	volatile char calc_checksum, rcv_checksum[2], calc_checksum_hex[2];
+	
+	stop = count_string(message, start, '*');
+	rcv_checksum[0] = message[stop + 1];
+	rcv_checksum[1] = message[stop + 2];
+	
+	calc_checksum = message[1];
+	for(i = 2; i < stop; i++)				//calculate checksum
+	{
+		calc_checksum ^= message[i];
+	}
+	if(calc_checksum < 16)					//convert calculated checksum to hex string
+	{
+		char temp[2];
+		sprintf(temp, "%x", 0);	
+		calc_checksum_hex[0] = temp[0];
+		sprintf(temp, "%x", calc_checksum);	
+		calc_checksum_hex[1] = temp[0];
+	}
+	else
+	{
+		sprintf(calc_checksum_hex, "%x", calc_checksum);
+	}
+	
+	if(compare_two_strings(&rcv_checksum[0], &calc_checksum_hex[0], 2) == 1)	//compare calculated and received checksum, return 1 if they are equal, else 0
+		return 1;
+	else
+		return 0;
+		
+}
+
 int split_message(char *source, char *target, int start, int stop)	//copy data from source to target array between start and stop index
 {
 	int i;
@@ -205,88 +219,105 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 	else if(msg.GPRMC_msg[18] == 'A')	//parse data only if messages are valid
 		data->valid = true;
 
+
+	//volatile char ak = check_validity(msg.GPRMC_msg);
+
+
+
 	//GPRMC=========================================================================================
 	if(msg.GPRMC_fresh == true)												//minimum GPS data
 	{
-		stop = count_string(msg.GPRMC_msg, start, ',');
-		start = split_message(&msg.GPRMC_msg[0], &data->time[0], start, stop - 4);			//time
+		if(check_checksum(msg.GPRMC_msg) == 1)		//parse only if received and calculated checksum are same
+		{
+			stop = count_string(msg.GPRMC_msg, start, ',');
+			start = split_message(&msg.GPRMC_msg[0], &data->time[0], start, stop - 4);			//time
 	
-		start = stop + 3;						//jump over validity
-		stop = count_string(&msg.GPRMC_msg[0], start, ',');
-		start = split_message(&msg.GPRMC_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
-		data->lat_dir = msg.GPRMC_msg[++start];
-		data->latitude_deg = NMEAtoDeg(&data->latitudeNMEA[0]);
+			start = stop + 3;						//jump over validity
+			stop = count_string(&msg.GPRMC_msg[0], start, ',');
+			start = split_message(&msg.GPRMC_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
+			data->lat_dir = msg.GPRMC_msg[++start];
+			data->latitude_deg = NMEAtoDeg(&data->latitudeNMEA[0]);
 	
-		start += 2;
-		stop = count_string(&msg.GPRMC_msg[0], start, ',');
-		start = split_message(&msg.GPRMC_msg[0], &data->longitudeNMEA[0], start, stop);	//longitude
-		data->lon_dir = msg.GPRMC_msg[++start];
-		data->longitude_deg = NMEAtoDeg(&data->longitudeNMEA[0]);
+			start += 2;
+			stop = count_string(&msg.GPRMC_msg[0], start, ',');
+			start = split_message(&msg.GPRMC_msg[0], &data->longitudeNMEA[0], start, stop);		//longitude
+			data->lon_dir = msg.GPRMC_msg[++start];
+			data->longitude_deg = NMEAtoDeg(&data->longitudeNMEA[0]);
 	
-		start += 2;
-		stop = count_string(&msg.GPRMC_msg[0], start, ',');
-		start = split_message(&msg.GPRMC_msg[0], &data->speed_kn[0], start, stop);			//speed in knots
+			start += 2;
+			stop = count_string(&msg.GPRMC_msg[0], start, ',');
+			start = split_message(&msg.GPRMC_msg[0], &data->speed_kn[0], start, stop);			//speed in knots
 	
-		start++;
-		stop = count_string(&msg.GPRMC_msg[0], start, ',');
-		start = split_message(&msg.GPRMC_msg[0], &data->course[0], start, stop);			//course
+			start++;
+			stop = count_string(&msg.GPRMC_msg[0], start, ',');
+			start = split_message(&msg.GPRMC_msg[0], &data->course[0], start, stop);			//course
 	
-		start++;
-		stop = count_string(&msg.GPRMC_msg[0], start, ',');
-		start = split_message(&msg.GPRMC_msg[0], &data->date[0], start, stop);				//date
+			start++;
+			stop = count_string(&msg.GPRMC_msg[0], start, ',');
+			start = split_message(&msg.GPRMC_msg[0], &data->date[0], start, stop);				//date
+		}
 	}
 	//GPVTG==========================================================================================
 	start = 7;														//speed and track info
 	stop = 0;
-	if(msg.GPVTG_fresh == true)
+	if(check_checksum(msg.GPVTG_msg) == 1)		//parse only if received and calculated checksum are same
 	{
-		stop = count_string(&msg.GPVTG_msg[0], start, ',');
-		start = split_message(&msg.GPVTG_msg[0], &data->course[0], start, stop);		//course
+		if(msg.GPVTG_fresh == true)
+		{
+			stop = count_string(&msg.GPVTG_msg[0], start, ',');
+			start = split_message(&msg.GPVTG_msg[0], &data->course[0], start, stop);		//course
 		
-		start += 6;
-		stop = count_string(&msg.GPVTG_msg[0], start, ',');
-		start = split_message(&msg.GPVTG_msg[0], &data->speed_kn[0], start, stop);		//speed in knots
+			start += 6;
+			stop = count_string(&msg.GPVTG_msg[0], start, ',');
+			start = split_message(&msg.GPVTG_msg[0], &data->speed_kn[0], start, stop);		//speed in knots
 		
-		start += 3;
-		stop = count_string(&msg.GPVTG_msg[0], start, ',');
-		start = split_message(&msg.GPVTG_msg[0], &data->speed_kmh[0], start, stop);	//speed in knots
+			start += 3;
+			stop = count_string(&msg.GPVTG_msg[0], start, ',');
+			start = split_message(&msg.GPVTG_msg[0], &data->speed_kmh[0], start, stop);	//speed in knots
 		
+		}
 	}
 	//GPGGA==============================================================================================
 	start = 7;													//GPS fix info
 	stop = 0;
-	if(msg.GPGGA_fresh == true)
+	if(check_checksum(msg.GPGGA_msg) == 1)		//parse only if received and calculated checksum are same
 	{
-		stop = count_string(&msg.GPGGA_msg[0], start, ',');
-		start = split_message(&msg.GPGGA_msg[0], &data->time[0], start, stop - 4);			//time
+		if(msg.GPGGA_fresh == true)
+		{
+			stop = count_string(&msg.GPGGA_msg[0], start, ',');
+			start = split_message(&msg.GPGGA_msg[0], &data->time[0], start, stop - 4);			//time
 		
-		start += 5;
-		stop = count_string(&msg.GPGGA_msg[0], start, ',');
-		start = split_message(&msg.GPGGA_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
-		data->lat_dir = msg.GPGGA_msg[++start];
-		data->latitude_deg = NMEAtoDeg(&data->latitudeNMEA[0]);
+			start += 5;
+			stop = count_string(&msg.GPGGA_msg[0], start, ',');
+			start = split_message(&msg.GPGGA_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
+			data->lat_dir = msg.GPGGA_msg[++start];
+			data->latitude_deg = NMEAtoDeg(&data->latitudeNMEA[0]);
 		
-		start += 2;
-		stop = count_string(&msg.GPGGA_msg[0], start, ',');
-		start = split_message(&msg.GPGGA_msg[0], &data->longitudeNMEA[0], start, stop);	//longitude
-		data->lon_dir = msg.GPGGA_msg[++start];
-		data->longitude_deg = NMEAtoDeg(&data->longitudeNMEA[0]);
+			start += 2;
+			stop = count_string(&msg.GPGGA_msg[0], start, ',');
+			start = split_message(&msg.GPGGA_msg[0], &data->longitudeNMEA[0], start, stop);		//longitude
+			data->lon_dir = msg.GPGGA_msg[++start];
+			data->longitude_deg = NMEAtoDeg(&data->longitudeNMEA[0]);
 		
-		start += 4;
-		stop = count_string(&msg.GPGGA_msg[0], start, ',');
-		start = split_message(&msg.GPGGA_msg[0], &data->num_of_act_sats[0], start, stop);	//number of active satellites
+			start += 4;
+			stop = count_string(&msg.GPGGA_msg[0], start, ',');
+			start = split_message(&msg.GPGGA_msg[0], &data->num_of_act_sats[0], start, stop);	//number of active satellites
 
-		start += 6;
-		stop = count_string(&msg.GPGGA_msg[0], start, ',');
-		start = split_message(&msg.GPGGA_msg[0], &data->altitude[0], start, stop);			//altitude
+			start += 6;
+			stop = count_string(&msg.GPGGA_msg[0], start, ',');
+			start = split_message(&msg.GPGGA_msg[0], &data->altitude[0], start, stop);			//altitude
 
+		}
 	}
 	//GPGSA==============================================================================================
 	/*start = 7;												//IDs of active satellites
 	stop = 0;
-	if(msg.GPGSA_fresh == true)
+	if(check_checksum(msg.GPGSA_msg) == 1)		//parse only if received and calculated checksum are same
 	{
-		
+		if(msg.GPGSA_fresh == true)
+		{
+			
+		}
 	}
 	*/
 	
@@ -295,23 +326,31 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 	stop = 0;
 	if(msg.GPGSV1_fresh == true)
 	{
-		stop = count_string(&msg.GPGSV1_msg[0], start, ',');
-		start = split_message(&msg.GPGSV1_msg[0], &data->num_of_view_sats[0], start, stop);	//number of satellites in view
+		if(check_checksum(msg.GPGSV1_msg) == 1)		//parse only if received and calculated checksum are same
+		{
+			stop = count_string(&msg.GPGSV1_msg[0], start, ',');
+			start = split_message(&msg.GPGSV1_msg[0], &data->num_of_view_sats[0], start, stop);	//number of satellites in view
+		}
 	}
 	/*
 	if(msg.GPGSV2_fresh == true)
 	{
+		if(check_checksum(msg.GPGSV2_msg) == 1)	
+		{
+		}
 		
 	}
 	if(msg.GPGSV3_fresh == true)
 	{
-		
+		if(check_checksum(msg.GPGSV3_msg) == 1)	
+		{
+		}
 	}
 	*/
 	
 }
 
-float NMEAtoDeg(char *NMEA)
+float NMEAtoDeg(char *NMEA)					//convert NMEA latitude and longitude format to degrees
 {
 	char decimal[4] ;
 	char fraction[7] ;
@@ -324,7 +363,7 @@ float NMEAtoDeg(char *NMEA)
 		
 		decimal[0] = NMEA[0];
 		decimal[1] = NMEA[1];
-		decimal[2] = 'A';			//for atof function
+		decimal[2] = 'A';			//character to stop atof function
 	}
 	else if (counter == 5)
 	{
@@ -332,7 +371,7 @@ float NMEAtoDeg(char *NMEA)
 		decimal[0] = NMEA[0];
 		decimal[1] = NMEA[1];
 		decimal[2] = NMEA[2];
-		decimal[3] = 'A';			//for atof function
+		decimal[3] = 'A';			//character to stop atof function
 	}
 
 	for(i = 0; i < 7; i++)

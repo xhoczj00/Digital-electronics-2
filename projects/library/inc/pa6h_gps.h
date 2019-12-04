@@ -53,7 +53,7 @@ typedef struct GPS_msgs
 	bool GPGSV3_fresh;
 }T_GPS_msgs;
 
-char* return_buffer_ptr(void);
+
 
 void gps_get_data(char *received_data);
 
@@ -86,6 +86,17 @@ int count_string(char *string, int start, char end_character);
 			 1 if str1 and str2 are the same
  */
 char compare_two_strings(char *str1, char *str2, int length);
+
+
+/**
+ *  @brief   Calculate checksum value and compare it with received checksum
+ *
+ *  @param   message is string in NMEA format
+ *  @return  0 if calculated and received checksum are different
+			 1 if calculated and received checksum are equal
+ */
+char check_checksum(char *message);
+
 
 /**
  *  @brief   Analyze data from fresh messages and copy them into data structure
