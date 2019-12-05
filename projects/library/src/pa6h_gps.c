@@ -8,6 +8,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include "pa6h_gps.h"
@@ -155,7 +156,7 @@ void gps_get_data(char *received_data)
 	}
 
 	//nokia_lcd_set_cursor(0,0);
-	//nokia_lcd_write_string(msg.GPRMC_msg,1);
+	//nokia_lcd_write_string(msg.GPVTG_msg,1);
 	//nokia_lcd_write_string(msg.GPVTG_msg,1);
 	//nokia_lcd_render();
 	sei();
@@ -164,8 +165,8 @@ void gps_get_data(char *received_data)
 
 char check_checksum(char *message)			//calculate checksum from all characters between $ and * compare it to received checksum after * in NMEA message
 {
-	volatile int start = 0, stop = 0, i;
-	volatile char calc_checksum, rcv_checksum[2], calc_checksum_hex[2];
+	int start = 0, stop = 0, i;
+	char calc_checksum, rcv_checksum[2], calc_checksum_hex[2];
 	
 	stop = count_string(message, start, '*');
 	rcv_checksum[0] = message[stop + 1];
@@ -227,7 +228,7 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 	//GPRMC=========================================================================================
 	if(msg.GPRMC_fresh == true)												//minimum GPS data
 	{
-		if(check_checksum(msg.GPRMC_msg) == 1)		//parse only if received and calculated checksum are same
+		//if(check_checksum(msg.GPRMC_msg) == 1)		//parse only if received and calculated checksum are same
 		{
 			stop = count_string(msg.GPRMC_msg, start, ',');
 			start = split_message(&msg.GPRMC_msg[0], &data->time[0], start, stop - 4);			//time
@@ -260,9 +261,9 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 	//GPVTG==========================================================================================
 	start = 7;														//speed and track info
 	stop = 0;
-	if(check_checksum(msg.GPVTG_msg) == 1)		//parse only if received and calculated checksum are same
+	if(msg.GPVTG_fresh == true)
 	{
-		if(msg.GPVTG_fresh == true)
+		//if(check_checksum(msg.GPVTG_msg) == 1)		//parse only if received and calculated checksum are same
 		{
 			stop = count_string(&msg.GPVTG_msg[0], start, ',');
 			start = split_message(&msg.GPVTG_msg[0], &data->course[0], start, stop);		//course
@@ -280,9 +281,11 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 	//GPGGA==============================================================================================
 	start = 7;													//GPS fix info
 	stop = 0;
-	if(check_checksum(msg.GPGGA_msg) == 1)		//parse only if received and calculated checksum are same
+	
+	
+	if(msg.GPGGA_fresh == true)
 	{
-		if(msg.GPGGA_fresh == true)
+		if(check_checksum(msg.GPGGA_msg) == 1)		//parse only if received and calculated checksum are same
 		{
 			stop = count_string(&msg.GPGGA_msg[0], start, ',');
 			start = split_message(&msg.GPGGA_msg[0], &data->time[0], start, stop - 4);			//time
@@ -306,9 +309,9 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 			start += 6;
 			stop = count_string(&msg.GPGGA_msg[0], start, ',');
 			start = split_message(&msg.GPGGA_msg[0], &data->altitude[0], start, stop);			//altitude
-
 		}
 	}
+	
 	//GPGSA==============================================================================================
 	/*start = 7;												//IDs of active satellites
 	stop = 0;
@@ -326,7 +329,7 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 	stop = 0;
 	if(msg.GPGSV1_fresh == true)
 	{
-		if(check_checksum(msg.GPGSV1_msg) == 1)		//parse only if received and calculated checksum are same
+		//if(check_checksum(msg.GPGSV1_msg) == 1)		//parse only if received and calculated checksum are same
 		{
 			stop = count_string(&msg.GPGSV1_msg[0], start, ',');
 			start = split_message(&msg.GPGSV1_msg[0], &data->num_of_view_sats[0], start, stop);	//number of satellites in view
@@ -380,6 +383,7 @@ float NMEAtoDeg(char *NMEA)					//convert NMEA latitude and longitude format to 
 	}
 	
 	result = atof(decimal) + (atof(fraction) / 60);
+	
 	return result;
 }
 
