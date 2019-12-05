@@ -28,7 +28,7 @@
 
 char rcv_data[550];//= "$GPRMC,080423.000,A,4913.6146,N,11634.4190,E,0.30,70.31,271119,,,A*5E\r\n$GPVTG,81.42,T,,M,1.55,N,0.55,K,A*0B\r\n$GPGGA,080424.000,4913.6146,N,11634.4188,E,1,6,2.13,288.2,M,43.5,M,,*5D\r\n$GPGSA,A,3,01,03,23,11,19,17,,,,,,,2.33,2.13,0.94*00\r\n$GPGSV,3,1,12,01,75,146,25,03,64,276,30,11,54,185,29,17,34,303,32*78\r\n$GPGSV,3,2,12,23,28,205,22,31,24,092,22,19,21,319,28,40,17,124,*77\r\n$GPGSV,3,3,12,08,03,182,,09,01,213,,22,,,20,14,,,21*76\r\n";
 T_GPS_data curr_data;
-int j,i = 0;
+int j,i,k,l,m,o = 0;
 volatile bool received_frame = false;
 
 int main(void)
@@ -51,6 +51,13 @@ int main(void)
 	uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
 	sei();
 	//buffer = return_buffer_ptr();
+	for(j = 8; j<36;j+9)
+	{
+		for(k = 0;k<84;k++)
+		{
+			nokia_lcd_set_pixel(k,j,1);
+		}
+	}
 	
 	//parse_data(&curr_data);
 	for(;;)
@@ -60,7 +67,16 @@ int main(void)
             nokia_lcd_set_cursor(0,0);
             for(j =0;j<6;j++)
                 nokia_lcd_write_char(curr_data.time[j],1);
-            nokia_lcd_render();
+			
+			nokia_lcd_set_cursor(0,9);
+			for(l = 0;l<9;l++)
+				nokia_lcd_write_char(curr_data.latitudeNMEA[l],1);
+			
+			nokia_lcd_set_cursor(0,18);
+			for(m = 0;m<10;m++)
+				nokia_lcd_write_char(curr_data.longitudeNMEA[m],1);
+			
+			 nokia_lcd_render();
             received_frame = false;
         }
     }
