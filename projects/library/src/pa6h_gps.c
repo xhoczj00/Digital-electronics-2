@@ -209,6 +209,7 @@ int split_message(char *source, char *target, int start, int stop)	//copy data f
 }
 void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 {
+	cli();
 	volatile int start = 7, stop = 0;	//must be volatile for debug
 
 	if(msg.GPRMC_msg[18] == 'V')		//if invalid messages return
@@ -274,8 +275,10 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 		
 			start += 3;
 			stop = count_string(&msg.GPVTG_msg[0], start, ',');
-			start = split_message(&msg.GPVTG_msg[0], &data->speed_kmh[0], start, stop);	//speed in knots
+			start = split_message(&msg.GPVTG_msg[0], &data->speed_kmh[0], start, stop);		//speed in kmh
 		
+			
+
 		}
 	}
 	//GPGGA==============================================================================================
@@ -285,7 +288,7 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 	
 	if(msg.GPGGA_fresh == true)
 	{
-		if(check_checksum(msg.GPGGA_msg) == 1)		//parse only if received and calculated checksum are same
+		//if(check_checksum(msg.GPGGA_msg) == 1)		//parse only if received and calculated checksum are same
 		{
 			stop = count_string(&msg.GPGGA_msg[0], start, ',');
 			start = split_message(&msg.GPGGA_msg[0], &data->time[0], start, stop - 4);			//time
@@ -350,7 +353,7 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 		}
 	}
 	*/
-	
+	sei();
 }
 
 float NMEAtoDeg(char *NMEA)					//convert NMEA latitude and longitude format to degrees
