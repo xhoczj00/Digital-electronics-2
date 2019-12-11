@@ -22,11 +22,12 @@
 #include "pa6h_gps.h"
 #include "gpio.h"
 #include "timer.h"
+#include "softuart.h"
 
 #define UART_BAUD_RATE 9600
 #define LED_PIN0     PD4
 
-char rcv_data[550];// = "$GPRMC,080553.000,A,4913.6585,N,01634.4322,E,2.82,71.74,271119,,,A*53\r\n$GPVTG,71.74,T,,M,2.82,N,5.23,K,A*04\r\n$GPGGA,080557.000,4913.6594,N,01634.4352,E,1,8,1.15,283.6,M,43.5,M,,*52\r\n$GPGSA,A,3,01,03,23,11,19,17,,,,,,,2.33,2.13,0.94*00\r\n$GPGSV,3,1,12,01,75,146,25,03,64,276,30,11,54,185,29,17,34,303,32*78\r\n$GPGSV,3,2,12,23,28,205,22,31,24,092,22,19,21,319,28,40,17,124,*77\r\n$GPGSV,3,3,12,08,03,182,,09,01,213,,22,,,20,14,,,21*76\r\n";
+char rcv_data[500] = "$GPRMC,080553.000,A,4913.6585,N,01634.4322,E,2.82,71.74,271119,,,A*53\r\n$GPVTG,71.74,T,,M,2.82,N,5.23,K,A*04\r\n$GPGGA,080557.000,4913.6594,N,01634.4352,E,1,8,1.15,283.6,M,43.5,M,,*52\r\n$GPGSA,A,3,01,03,23,11,19,17,,,,,,,2.33,2.13,0.94*00\r\n$GPGSV,3,1,12,01,75,146,25,03,64,276,30,11,54,185,29,17,34,303,32*78\r\n$GPGSV,3,2,12,23,28,205,22,31,24,092,22,19,21,319,28,40,17,124,*77\r\n$GPGSV,3,3,12,08,03,182,,09,01,213,,22,,,20,14,,,21*76\r\n";
 char Latitude[11];
 char Longitude[11];
 T_GPS_data curr_data;
@@ -47,10 +48,12 @@ int main(void)
     //curr_data.time[0] = '1';
     //curr_data.time[1] = '2';
 	PORTD |= (1<<LED_PIN0);
-	TIM_config_prescaler(TIM0, TIM_PRESC_256);
-	TIM_config_interrupt(TIM0, TIM_OVERFLOW_ENABLE);
-    
-	uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
+	TIM_config_prescaler(TIM1, TIM_PRESC_256);
+	TIM_config_interrupt(TIM1, TIM_OVERFLOW_ENABLE);
+
+	//uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
+    softuart_init();
+    softuart_turn_rx_on(); /* redundant - on by default */
 	sei();
 	//buffer = return_buffer_ptr();
 	/*for(j = 8; j<36;j+9)
@@ -65,8 +68,11 @@ int main(void)
 
     //gps_get_data(&rcv_data[0]);
     //parse_data(&curr_data);
+    
+        
 	for(;;)
     {
+        
         if(received_frame == true)
         {
             
@@ -124,8 +130,11 @@ int main(void)
           // nokia_lcd_write_string(rcv_data,1);
             nokia_lcd_render();
 
-
+            softuart_puts(curr_data.time);    // "implicit" PSTR
+            softuart_puts( "--\r\n" );  // string "from RAM"
            received_frame = false;
+               PORTD &= ~(1<<LED_PIN0);
+
         }
     }
 	
@@ -142,13 +151,14 @@ ISR(USART_RX_vect)
     //TIM_config_interrupt(TIM0, TIM_OVERFLOW_ENABLE);
 	
 }
-ISR(TIMER0_OVF_vect)
+//ISR(TIMER2_OVF_vect)
+ISR(TIMER1_OVF_vect)
 {
 	i = 0;
     //rcvd_frame = true;
     //TIM_config_interrupt(TIM0, TIM_OVERFLOW_DISABLE);
     
-    if(rcv_data[0] != 0)
+    //if(rcv_data[0] != 0)
     {
         gps_get_data(&rcv_data[0]);
         parse_data(&curr_data);

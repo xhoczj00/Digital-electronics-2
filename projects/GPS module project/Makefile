@@ -24,6 +24,7 @@ SRCS += $(LIBRARY_DIR)/src/gpio.c
 #SRCS += $(LIBRARY_DIR)/src/segment.c
 SRCS += $(LIBRARY_DIR)/src/nokia5110.c
 SRCS += $(LIBRARY_DIR)/src/pa6h_gps.c
+SRCS += $(LIBRARY_DIR)/src/softuart.c
 ASSRC := $(wildcard *.S)
 
 

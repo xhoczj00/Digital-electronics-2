@@ -227,7 +227,7 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 		{
 			stop = count_string(msg.GPRMC_msg, start, ',');
 			start = split_message(&msg.GPRMC_msg[0], &data->time[0], start, stop - 4);			//time
-	
+			data->time[7] = '\0';
 			start = stop + 3;						//jump over validity
 			stop = count_string(&msg.GPRMC_msg[0], start, ',');
 			start = split_message(&msg.GPRMC_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
@@ -282,7 +282,7 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 		{
 			stop = count_string(&msg.GPGGA_msg[0], start, ',');
 			start = split_message(&msg.GPGGA_msg[0], &data->time[0], start, stop - 4);			//time
-		
+			data->time[7] = '\0';
 			start += 5;
 			stop = count_string(&msg.GPGGA_msg[0], start, ',');
 			start = split_message(&msg.GPGGA_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude

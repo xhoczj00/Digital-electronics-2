@@ -17,7 +17,7 @@ char rcv_data[500];
 typedef struct GPS_data
 {
 	bool valid;
-	char time[6];
+	char time[7];
 	char date[6];
 	char latitudeNMEA[9];
 	char lat_dir;
