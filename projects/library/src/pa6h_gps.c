@@ -140,15 +140,17 @@ char compare_two_strings(char *str1, char *str2, int length)		//comparing two st
 void gps_get_data(char *received_data, T_GPS_data *data)
 {
 	int  length = 0, start = 0, stop = 0;
-	T_GPS_msgs msg;
+	T_GPS_msgs *msg;
 
 	cli();
 	
-	msg.GPRMC_fresh = false;
-	msg.GPVTG_fresh = false;
-	msg.GPGGA_fresh = false;
-	msg.GPGSA_fresh = false;
-	msg.GPGSV1_fresh = false;
+	msg = (T_GPS_msgs*)(sizeof(T_GPS_msgs));
+	
+	msg->GPRMC_fresh = false;
+	msg->GPVTG_fresh = false;
+	msg->GPGGA_fresh = false;
+	msg->GPGSA_fresh = false;
+	msg->GPGSV1_fresh = false;
 	//msg.GPGSV2_fresh = false;
 	//msg.GPGSV3_fresh = false;
 	//msg.GPGSV4_fresh = false;
@@ -160,7 +162,8 @@ void gps_get_data(char *received_data, T_GPS_data *data)
 		stop = count_string(received_data, ++start, '\n');	//find next end of message
 		length = stop - start;							
 	}
-	parse_data(data, &msg);
+	free(received_data);
+	parse_data(data, msg);
 	sei();
 }
 
@@ -356,6 +359,7 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 		}
 	}
 	*/
+	free(msg);
 	sei();
 }
 

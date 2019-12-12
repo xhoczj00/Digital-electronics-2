@@ -11,7 +11,7 @@
 
 #include <stdbool.h>
 
-char rcv_data[500];
+//char rcv_data[500];
 
 
 typedef struct GPS_data
