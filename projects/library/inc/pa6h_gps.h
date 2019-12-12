@@ -42,17 +42,17 @@ typedef struct GPS_msgs
 	char GPGGA_msg[83];
 	char GPGSA_msg[83];
 	char GPGSV1_msg[83];
-	char GPGSV2_msg[83];
-	char GPGSV3_msg[83];
-	char GPGSV4_msg[83];
+	//char GPGSV2_msg[83];
+	//char GPGSV3_msg[83];
+	//char GPGSV4_msg[83];
 	bool GPRMC_fresh;
 	bool GPVTG_fresh;
 	bool GPGGA_fresh;
 	bool GPGSA_fresh;
 	bool GPGSV1_fresh;
-	bool GPGSV2_fresh;
-	bool GPGSV3_fresh;
-	bool GPGSV4_fresh;
+	//bool GPGSV2_fresh;
+	//bool GPGSV3_fresh;
+	//bool GPGSV4_fresh;
 }T_GPS_msgs;
 
 

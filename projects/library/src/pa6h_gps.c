@@ -84,7 +84,7 @@ int frame_split(char *rcv_msg, T_GPS_msgs *msg, int start, int stop)	//splitting
 				}
 				msg->GPGSV1_fresh = true;
 				break;
-			case '2':									//2nd message
+			/*case '2':									//2nd message
 				for(i = start; i < stop; i++)
 				{
 					msg->GPGSV2_msg[i - start] = rcv_msg[i];;
@@ -105,7 +105,10 @@ int frame_split(char *rcv_msg, T_GPS_msgs *msg, int start, int stop)	//splitting
 				}
 				msg->GPGSV3_fresh = true;
 				break;
-			
+			*/
+			default:
+				msg->GPGSV1_fresh = false;
+				break;
 		}
 	}
 	return stop;
@@ -146,9 +149,9 @@ void gps_get_data(char *received_data, T_GPS_data *data)
 	msg.GPGGA_fresh = false;
 	msg.GPGSA_fresh = false;
 	msg.GPGSV1_fresh = false;
-	msg.GPGSV2_fresh = false;
-	msg.GPGSV3_fresh = false;
-	msg.GPGSV4_fresh = false;
+	//msg.GPGSV2_fresh = false;
+	//msg.GPGSV3_fresh = false;
+	//msg.GPGSV4_fresh = false;
 	
 	stop = count_string(received_data, start, '\n');		//stop position of first message out of frame
 	while(length < 83)									//NMEA messages are always less than 83 characters

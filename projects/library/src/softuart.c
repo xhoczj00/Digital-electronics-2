@@ -146,7 +146,7 @@ V0.4 (10/2010)
 #define RX_NUM_OF_BITS (8)
 volatile static char           inbuf[SOFTUART_IN_BUF_SIZE];
 volatile static unsigned char  qin;
-static unsigned char           qout;
+//static unsigned char           qout;
 volatile static unsigned char  flag_rx_off;
 volatile static unsigned char  flag_rx_ready;
 
@@ -276,13 +276,13 @@ void softuart_init( void )
 	timer_init();
 }
 
-static void idle(void)
+/*static void idle(void)
 {
 	// timeout handling goes here 
 	// - but there is a "softuart_kbhit" in this code...
 	// add watchdog-reset here if needed
 }
-
+*/
 void softuart_turn_rx_on( void )
 {
 	flag_rx_off = SU_FALSE;
