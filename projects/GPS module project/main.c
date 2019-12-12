@@ -23,7 +23,7 @@
 #include "softuart.h"
 
 #define UART_BAUD_RATE 9600
-#define LED_PIN0     PD4
+#define LED_PIN0     PD7
 
 typedef enum 
 {
@@ -33,7 +33,7 @@ typedef enum
     IDLE_STATE
 } state_t;
 
-char rcv_data[500] = "$GPRMC,080553.000,A,4913.6585,N,01634.4322,E,2.82,71.74,271119,,,A*53\r\n$GPVTG,71.74,T,,M,2.82,N,5.23,K,A*04\r\n$GPGGA,080557.000,4913.6594,N,01634.4352,E,1,8,1.15,283.6,M,43.5,M,,*52\r\n$GPGSA,A,3,01,03,23,11,19,17,,,,,,,2.33,2.13,0.94*00\r\n$GPGSV,3,1,12,01,75,146,25,03,64,276,30,11,54,185,29,17,34,303,32*78\r\n$GPGSV,3,2,12,23,28,205,22,31,24,092,22,19,21,319,28,40,17,124,*77\r\n$GPGSV,3,3,12,08,03,182,,09,01,213,,22,,,20,14,,,21*76\r\n";
+char rcv_data[500] ;//= "$GPRMC,080553.000,A,4913.6585,N,01634.4322,E,2.82,71.74,271119,,,A*53\r\n$GPVTG,71.74,T,,M,2.82,N,5.23,K,A*04\r\n$GPGGA,080557.000,4913.6594,N,01634.4352,E,1,8,1.15,283.6,M,43.5,M,,*52\r\n$GPGSA,A,3,01,03,23,11,19,17,,,,,,,2.33,2.13,0.94*00\r\n$GPGSV,3,1,12,01,75,146,25,03,64,276,30,11,54,185,29,17,34,303,32*78\r\n$GPGSV,3,2,12,23,28,205,22,31,24,092,22,19,21,319,28,40,17,124,*77\r\n$GPGSV,3,3,12,08,03,182,,09,01,213,,22,,,20,14,,,21*76\r\n";
 char Latitude[11];
 char Longitude[11];
 T_GPS_data curr_data;
@@ -53,6 +53,8 @@ int main(void)
 		{
 			case START_STATE:
 				initialization();
+			//	char header[] ={"Time;Latitude;Longitude;Speed[kmh];Altitude;ActSats;\r\n"};
+			//	softuart_puts(header);
 				current_state = NOGPS_STATE;
 				break;
 
@@ -62,16 +64,22 @@ int main(void)
                 nokia_lcd_set_cursor(10,16);
 				nokia_lcd_write_string("NO GPS", 2);
 				nokia_lcd_render();
-                _delay_ms(500);
                 nokia_lcd_clear();
-                current_state = NEWDATA_STATE;
+                current_state =  IDLE_STATE;
 				break;
 
 			
 			case NEWDATA_STATE:
-				gps_get_data(&rcv_data[0]);
-				parse_data(&curr_data);
-				display_data();
+				gps_get_data(&rcv_data[0],&curr_data);
+				//parse_data(&curr_data);
+				if(curr_data.valid ==true)
+				{
+					display_data();
+				}
+				else
+				{
+					current_state = NOGPS_STATE;	
+				}
 				current_state = IDLE_STATE;
 				break;
 				
@@ -99,12 +107,13 @@ void initialization(void)
     nokia_lcd_clear();
     nokia_lcd_render();
 	PORTD |= (1<<LED_PIN0);
-	TIM_config_prescaler(TIM1, TIM_PRESC_256);
-	TIM_config_interrupt(TIM1, TIM_OVERFLOW_ENABLE);
+	TIM_config_prescaler(TIM2, TIM_PRESC_256);
+	TIM_config_interrupt(TIM2, TIM_OVERFLOW_ENABLE);
 
-	//uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
+	uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
     softuart_init();
     softuart_turn_rx_on(); /* redundant - on by default */
+
 	sei();
 }
 	
@@ -187,7 +196,7 @@ void display_data(void)
         if(curr_data.num_of_act_sats[j] != '\0')
 		{    
 		    nokia_lcd_write_char(curr_data.num_of_act_sats[j],1);
-            rcv_data[k++] = curr_data.altitude[j];
+            rcv_data[k++] = curr_data.num_of_act_sats[j];
         }      
 	}
     rcv_data[k++] = ';';
@@ -241,27 +250,25 @@ void display_data(void)
 
 ISR(USART_RX_vect)
 {
-	TCNT0 = 0;
+	TCNT2 = 0;
     //GPIO_write(&DDRD,LED_PIN0,0);
     PORTD &= ~(1<<LED_PIN0);
 	rcv_data[i++] = UDR0;
-    //TIM_config_interrupt(TIM0, TIM_OVERFLOW_ENABLE);
+    //TIM_config_interrupt(TIM2, TIM_OVERFLOW_ENABLE);
 	
 }
-//ISR(TIMER2_OVF_vect)
-ISR(TIMER1_OVF_vect)
+ISR(TIMER2_OVF_vect)
+//ISR(TIMER1_OVF_vect)
 {
 	i = 0;
     //rcvd_frame = true;
-    //TIM_config_interrupt(TIM0, TIM_OVERFLOW_DISABLE);
-    
     //if(rcv_data[0] != 0)
-    {
+    
         
 
-            //GPIO_write(&DDRD,LED_PIN0,1);
+    //GPIO_write(&DDRD,LED_PIN0,1);
         PORTD |= (1<<LED_PIN0);
         current_state = NEWDATA_STATE;
-    }
-   
+    
+   //TIM_config_interrupt(TIM2, TIM_OVERFLOW_DISABLE);
 }

@@ -16,11 +16,11 @@
 //
 
 //
-T_GPS_msgs msg;
+
 T_GPS_data data;
 
 
-int frame_split(char *rcv_msg, int start, int stop)	//splitting messages out of frame and adding them in GPS_msgs structure
+int frame_split(char *rcv_msg, T_GPS_msgs *msg, int start, int stop)	//splitting messages out of frame and adding them in GPS_msgs structure
 {
 	char name[6];
 	char GPRMCname[6] = "$GPRMC";
@@ -42,33 +42,33 @@ int frame_split(char *rcv_msg, int start, int stop)	//splitting messages out of 
 	{
 		for(i = start; i < stop; i++)
 		{
-			msg.GPRMC_msg[i - start] = rcv_msg[i];
+			msg->GPRMC_msg[i - start] = rcv_msg[i];
 		}
-		msg.GPRMC_fresh = true;
+		msg->GPRMC_fresh = true;
 	}
 	else if (compare_two_strings(&name[0],&GPVTGname[0],6) == 1)	//GPVTG
 	{
 		for(i = start; i < stop; i++)
 		{
-			msg.GPVTG_msg[i - start] = rcv_msg[i];
+			msg->GPVTG_msg[i - start] = rcv_msg[i];
 		}
-		msg.GPVTG_fresh = true;
+		msg->GPVTG_fresh = true;
 	}
 	else if (compare_two_strings(&name[0],&GPGGAname[0],6) == 1)	//GPGGA
 	{
 		for(i = start; i < stop; i++)
 		{
-			msg.GPGGA_msg[i - start] = rcv_msg[i];
+			msg->GPGGA_msg[i - start] = rcv_msg[i];
 		}
-		msg.GPGGA_fresh = true;
+		msg->GPGGA_fresh = true;
 	}
 	else if (compare_two_strings(&name[0],&GPGSAname[0],6) == 1)	//GPGSA
 	{
 		for(i = start; i < stop; i++)
 		{
-			msg.GPGSA_msg[i - start] = rcv_msg[i];
+			msg->GPGSA_msg[i - start] = rcv_msg[i];
 		}
-		msg.GPGSA_fresh = true;
+		msg->GPGSA_fresh = true;
 	}
 	else if (compare_two_strings(&name[0],&GPGSVname[0],6) == 1)	//GPGSV, max 4 messages in row
 	{										
@@ -80,30 +80,30 @@ int frame_split(char *rcv_msg, int start, int stop)	//splitting messages out of 
 			case '1':									//1st message
 				for(i = start; i < stop; i++)
 				{
-					msg.GPGSV1_msg[i - start] = rcv_msg[i];;
+					msg->GPGSV1_msg[i - start] = rcv_msg[i];;
 				}
-				msg.GPGSV1_fresh = true;
+				msg->GPGSV1_fresh = true;
 				break;
 			case '2':									//2nd message
 				for(i = start; i < stop; i++)
 				{
-					msg.GPGSV2_msg[i - start] = rcv_msg[i];;
+					msg->GPGSV2_msg[i - start] = rcv_msg[i];;
 				}
-				msg.GPGSV2_fresh = true;
+				msg->GPGSV2_fresh = true;
 				break;
 			case '3':									//3rd message
 				for(i = start; i < stop; i++)
 				{
-					msg.GPGSV3_msg[i - start] = rcv_msg[i];;
+					msg->GPGSV3_msg[i - start] = rcv_msg[i];;
 				}
-				msg.GPGSV3_fresh = true;
+				msg->GPGSV3_fresh = true;
 				break;
 			case '4':
 				for(i = start; i < stop; i++)			//4th message
 				{
-					msg.GPGSV3_msg[i - start] = rcv_msg[i];;
+					msg->GPGSV3_msg[i - start] = rcv_msg[i];;
 				}
-				msg.GPGSV3_fresh = true;
+				msg->GPGSV3_fresh = true;
 				break;
 			
 		}
@@ -134,10 +134,11 @@ char compare_two_strings(char *str1, char *str2, int length)		//comparing two st
 }
 
 
-void gps_get_data(char *received_data)
+void gps_get_data(char *received_data, T_GPS_data *data)
 {
 	int  length = 0, start = 0, stop = 0;
-	
+	T_GPS_msgs msg;
+
 	cli();
 	
 	msg.GPRMC_fresh = false;
@@ -152,10 +153,11 @@ void gps_get_data(char *received_data)
 	stop = count_string(received_data, start, '\n');		//stop position of first message out of frame
 	while(length < 83)									//NMEA messages are always less than 83 characters
 	{
-		start = frame_split(received_data, start, stop);	//split message and return start position for new message
+		start = frame_split(received_data, &msg, start, stop);	//split message and return start position for new message
 		stop = count_string(received_data, ++start, '\n');	//find next end of message
 		length = stop - start;							
 	}
+	parse_data(data, &msg);
 	sei();
 }
 
@@ -207,102 +209,102 @@ int split_message(char *source, char *target, int start, int stop)	//copy data f
 	target[++i] = '\0';
 	return stop;
 }
-void parse_data(T_GPS_data *data)						//analyze data from fresh messages
+void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fresh messages
 {
 	volatile int start = 7, stop = 0;	
 
 	cli();
-	if(msg.GPRMC_msg[18] == 'V')		//if invalid messages return from function
+	if(msg->GPRMC_msg[18] == 'V')		//if invalid messages return from function
 	{
 		data->valid = false;
 		//data.valid = false;
 		return;						
 	}
-	else if(msg.GPRMC_msg[18] == 'A')	//parse data only if messages are valid
+	else if(msg->GPRMC_msg[18] == 'A')	//parse data only if messages are valid
 		data->valid = true;
 
 	//GPRMC=========================================================================================
-	if(msg.GPRMC_fresh == true)												//minimum GPS data
+	if(msg->GPRMC_fresh == true)												//minimum GPS data
 	{
-		if(check_checksum(msg.GPRMC_msg) == 1)		//parse only if received and calculated checksum are same
+		if(check_checksum(msg->GPRMC_msg) == 1)		//parse only if received and calculated checksum are same
 		{
-			stop = count_string(msg.GPRMC_msg, start, ',');
-			start = split_message(&msg.GPRMC_msg[0], &data->time[0], start, stop - 4);			//time
+			stop = count_string(&msg->GPRMC_msg[0], start, ',');
+			start = split_message(&msg->GPRMC_msg[0], &data->time[0], start, stop - 4);			//time
 	
 			start = stop + 3;						//jump over validity
-			stop = count_string(&msg.GPRMC_msg[0], start, ',');
-			start = split_message(&msg.GPRMC_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
-			data->lat_dir = msg.GPRMC_msg[++start];
+			stop = count_string(&msg->GPRMC_msg[0], start, ',');
+			start = split_message(&msg->GPRMC_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
+			data->lat_dir = msg->GPRMC_msg[++start];
 			data->latitude_deg = NMEAtoDeg(&data->latitudeNMEA[0]);
 	
 			start += 2;
-			stop = count_string(&msg.GPRMC_msg[0], start, ',');
-			start = split_message(&msg.GPRMC_msg[0], &data->longitudeNMEA[0], start, stop);		//longitude
-			data->lon_dir = msg.GPRMC_msg[++start];
+			stop = count_string(&msg->GPRMC_msg[0], start, ',');
+			start = split_message(&msg->GPRMC_msg[0], &data->longitudeNMEA[0], start, stop);		//longitude
+			data->lon_dir = msg->GPRMC_msg[++start];
 			data->longitude_deg = NMEAtoDeg(&data->longitudeNMEA[0]);
 	
 			start += 2;
-			stop = count_string(&msg.GPRMC_msg[0], start, ',');
-			start = split_message(&msg.GPRMC_msg[0], &data->speed_kn[0], start, stop);			//speed in knots
+			stop = count_string(&msg->GPRMC_msg[0], start, ',');
+			start = split_message(&msg->GPRMC_msg[0], &data->speed_kn[0], start, stop);			//speed in knots
 	
 			start++;
-			stop = count_string(&msg.GPRMC_msg[0], start, ',');
-			start = split_message(&msg.GPRMC_msg[0], &data->course[0], start, stop);			//course
+			stop = count_string(&msg->GPRMC_msg[0], start, ',');
+			start = split_message(&msg->GPRMC_msg[0], &data->course[0], start, stop);			//course
 	
 			start++;
-			stop = count_string(&msg.GPRMC_msg[0], start, ',');
-			start = split_message(&msg.GPRMC_msg[0], &data->date[0], start, stop);				//date
+			stop = count_string(&msg->GPRMC_msg[0], start, ',');
+			start = split_message(&msg->GPRMC_msg[0], &data->date[0], start, stop);				//date
 		}
 	}
 	//GPVTG==========================================================================================
 	start = 7;														//speed and track info
 	stop = 0;
-	if(msg.GPVTG_fresh == true)
+	if(msg->GPVTG_fresh == true)
 	{
-		if(check_checksum(msg.GPVTG_msg) == 1)		//parse only if received and calculated checksum are same
+		if(check_checksum(msg->GPVTG_msg) == 1)		//parse only if received and calculated checksum are same
 		{
-			stop = count_string(&msg.GPVTG_msg[0], start, ',');
-			start = split_message(&msg.GPVTG_msg[0], &data->course[0], start, stop);		//course
+			stop = count_string(&msg->GPVTG_msg[0], start, ',');
+			start = split_message(&msg->GPVTG_msg[0], &data->course[0], start, stop);		//course
 		
 			start += 6;
-			stop = count_string(&msg.GPVTG_msg[0], start, ',');
-			start = split_message(&msg.GPVTG_msg[0], &data->speed_kn[0], start, stop);		//speed in knots
+			stop = count_string(&msg->GPVTG_msg[0], start, ',');
+			start = split_message(&msg->GPVTG_msg[0], &data->speed_kn[0], start, stop);		//speed in knots
 		
 			start += 3;
-			stop = count_string(&msg.GPVTG_msg[0], start, ',');
-			start = split_message(&msg.GPVTG_msg[0], &data->speed_kmh[0], start, stop);		//speed in kmh
+			stop = count_string(&msg->GPVTG_msg[0], start, ',');
+			start = split_message(&msg->GPVTG_msg[0], &data->speed_kmh[0], start, stop);		//speed in kmh
 		
 		}
 	}
 	//GPGGA==============================================================================================
 	start = 7;													//GPS fix info
 	stop = 0;
-	if(msg.GPGGA_fresh == true)
+	if(msg->GPGGA_fresh == true)
 	{
-		if(check_checksum(msg.GPGGA_msg) == 1)		//parse only if received and calculated checksum are same
+		if(check_checksum(msg->GPGGA_msg) == 1)		//parse only if received and calculated checksum are same
 		{
-			stop = count_string(&msg.GPGGA_msg[0], start, ',');
-			start = split_message(&msg.GPGGA_msg[0], &data->time[0], start, stop - 4);			//time
-			data->time[7] = '\0';
+			stop = count_string(&msg->GPGGA_msg[0], start, ',');
+			start = split_message(&msg->GPGGA_msg[0], &data->time[0], start, stop - 4);			//time
+			
 			start += 5;
-			stop = count_string(&msg.GPGGA_msg[0], start, ',');
-			start = split_message(&msg.GPGGA_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
-			data->lat_dir = msg.GPGGA_msg[++start];
+			stop = count_string(&msg->GPGGA_msg[0], start, ',');
+			start = split_message(&msg->GPGGA_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
+			data->lat_dir = msg->GPGGA_msg[++start];
 			data->latitude_deg = NMEAtoDeg(&data->latitudeNMEA[0]);
 		
 			start += 2;
-			stop = count_string(&msg.GPGGA_msg[0], start, ',');
-			start = split_message(&msg.GPGGA_msg[0], &data->longitudeNMEA[0], start, stop);		//longitude
-			data->lon_dir = msg.GPGGA_msg[++start];
+			stop = count_string(&msg->GPGGA_msg[0], start, ',');
+			start = split_message(&msg->GPGGA_msg[0], &data->longitudeNMEA[0], start, stop);		//longitude
+			data->lon_dir = msg->GPGGA_msg[++start];
 			data->longitude_deg = NMEAtoDeg(&data->longitudeNMEA[0]);
 		
 			start += 4;
-			stop = count_string(&msg.GPGGA_msg[0], start, ',');
-			start = split_message(&msg.GPGGA_msg[0], &data->num_of_act_sats[0], start, stop);	//number of active satellites
+			stop = count_string(&msg->GPGGA_msg[0], start, ',');
+			start = split_message(&msg->GPGGA_msg[0], &data->num_of_act_sats[0], start, stop);	//number of active satellites
 
 			start += 6;
-			stop = count_string(&msg.GPGGA_msg[0], start, ',');
-			start = split_message(&msg.GPGGA_msg[0], &data->altitude[0], start, stop);			//altitude
+			stop = count_string(&msg->GPGGA_msg[0], start, ',');
+			start = split_message(&msg->GPGGA_msg[0], &data->altitude[0], start, stop);			//altitude
 
 		}
 	}
@@ -321,12 +323,12 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 	//GPGSV==============================================================================================
 	start = 11;													//number and IDs of satellites in view
 	stop = 0;
-	if(msg.GPGSV1_fresh == true)
+	if(msg->GPGSV1_fresh == true)
 	{
-		if(check_checksum(msg.GPGSV1_msg) == 1)		//parse only if received and calculated checksum are same
+		if(check_checksum(msg->GPGSV1_msg) == 1)		//parse only if received and calculated checksum are same
 		{
-			stop = count_string(&msg.GPGSV1_msg[0], start, ',');
-			start = split_message(&msg.GPGSV1_msg[0], &data->num_of_view_sats[0], start, stop);	//number of satellites in view
+			stop = count_string(&msg->GPGSV1_msg[0], start, ',');
+			start = split_message(&msg->GPGSV1_msg[0], &data->num_of_view_sats[0], start, stop);	//number of satellites in view
 		}
 	}
 	/*

@@ -57,7 +57,7 @@ typedef struct GPS_msgs
 
 
 
-void gps_get_data(char *received_data);
+void gps_get_data(char *received_data,  T_GPS_data *data);
 
 /**
  *  @brief   Splitting received data into messages and storing them in separate structure
@@ -67,7 +67,7 @@ void gps_get_data(char *received_data);
 			 stop is index of position where it stops 
  *  @return  stop index
  */
-int frame_split(char *rcv_msg, int start, int stop);
+int frame_split(char *rcv_msg,  T_GPS_msgs *msg, int start, int stop);
 
 /**
  *  @brief   Count number of character in string until end character
@@ -103,7 +103,7 @@ char check_checksum(char *message);
 /**
  *  @brief   Analyze data from fresh messages and copy them into data structure
  */
-void parse_data(T_GPS_data *data);
+void parse_data(T_GPS_data *data, T_GPS_msgs *msg);
 
 /**
  *  @brief   Copy data from source to target array between start and stop index
