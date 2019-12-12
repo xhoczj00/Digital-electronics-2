@@ -204,6 +204,7 @@ int split_message(char *source, char *target, int start, int stop)	//copy data f
 	{
 		target[i - start] = source[i];
 	}
+	target[++i] = '\0';
 	return stop;
 }
 void parse_data(T_GPS_data *data)						//analyze data from fresh messages
@@ -227,16 +228,18 @@ void parse_data(T_GPS_data *data)						//analyze data from fresh messages
 		{
 			stop = count_string(msg.GPRMC_msg, start, ',');
 			start = split_message(&msg.GPRMC_msg[0], &data->time[0], start, stop - 4);			//time
-			data->time[7] = '\0';
+			//data->time[7] = '\0';
 			start = stop + 3;						//jump over validity
 			stop = count_string(&msg.GPRMC_msg[0], start, ',');
 			start = split_message(&msg.GPRMC_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
+			//data->latitudeNMEA[9] = '\0';
 			data->lat_dir = msg.GPRMC_msg[++start];
 			data->latitude_deg = NMEAtoDeg(&data->latitudeNMEA[0]);
 	
 			start += 2;
 			stop = count_string(&msg.GPRMC_msg[0], start, ',');
 			start = split_message(&msg.GPRMC_msg[0], &data->longitudeNMEA[0], start, stop);		//longitude
+			//data->longitudeNMEA[10] = '\0';
 			data->lon_dir = msg.GPRMC_msg[++start];
 			data->longitude_deg = NMEAtoDeg(&data->longitudeNMEA[0]);
 	

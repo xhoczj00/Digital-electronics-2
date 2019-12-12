@@ -18,19 +18,19 @@ typedef struct GPS_data
 {
 	bool valid;
 	char time[7];
-	char date[6];
-	char latitudeNMEA[9];
+	char date[7];
+	char latitudeNMEA[10];
 	char lat_dir;
 	float latitude_deg;
-	char longitudeNMEA[10];
+	char longitudeNMEA[11];
 	char lon_dir;
 	float longitude_deg;
-	char speed_kn[7];
-	char speed_kmh[7];
-	char course[6];
-	char num_of_act_sats[2];
-	char num_of_view_sats[2];
-	char altitude[7];
+	char speed_kn[8];
+	char speed_kmh[8];
+	char course[7];
+	char num_of_act_sats[3];
+	char num_of_view_sats[3];
+	char altitude[8];
 	//float alt_accuracy;
 	//char active_sats[11];
 }T_GPS_data;
