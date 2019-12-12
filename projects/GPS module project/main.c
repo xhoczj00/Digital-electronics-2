@@ -12,7 +12,6 @@
 
 /* Includes ----------------------------------------------------------*/
 #include <avr/io.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h> 
 #include <avr/interrupt.h>
@@ -20,7 +19,6 @@
 #include "nokia5110.h"
 #include "uart.h"
 #include "pa6h_gps.h"
-#include "gpio.h"
 #include "timer.h"
 #include "softuart.h"
 
@@ -61,9 +59,11 @@ int main(void)
 			
 			case NOGPS_STATE:
 				//nokia_lcd_clear();
-				nokia_lcd_write_string("NO SIGNAL", 2);
+                nokia_lcd_set_cursor(10,16);
+				nokia_lcd_write_string("NO GPS", 2);
 				nokia_lcd_render();
                 _delay_ms(500);
+                nokia_lcd_clear();
                 current_state = NEWDATA_STATE;
 				break;
 
@@ -88,7 +88,8 @@ int main(void)
 	
 void initialization(void)
 {
-	GPIO_config_output(&DDRD, LED_PIN0);
+	//GPIO_config_output(&DDRD, LED_PIN0);
+    DDRD|=_BV(LED_PIN0);
     nokia_lcd_init();
     nokia_lcd_power(1);
     nokia_lcd_write_string("1648",1);
@@ -190,10 +191,13 @@ void display_data(void)
         }      
 	}
     rcv_data[k++] = ';';
+    rcv_data[k++] = '\r';
+    rcv_data[k++] = '\n';
+    rcv_data[k++] = '\0';
   // nokia_lcd_write_string(rcv_data,1);
 	nokia_lcd_render();
 	softuart_puts(rcv_data);    // "implicit" PSTR
-	softuart_puts( "--\r\n" );  // string "from RAM"
+	//softuart_puts( "--\r\n" );  // string "from RAM"
    //received_frame = false;
 	   PORTD &= ~(1<<LED_PIN0);
 }

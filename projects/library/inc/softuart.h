@@ -3,7 +3,7 @@
     #define F_CPU 3686400UL
 #endif
 
-#define SOFTUART_BAUD_RATE     38400 //9600
+#define SOFTUART_BAUD_RATE      9600//38400
 
 #if defined (__AVR_ATtiny25__) || defined (__AVR_ATtiny45__) || defined (__AVR_ATtiny85__)
     #define SOFTUART_RXPIN   PINB
@@ -87,7 +87,7 @@
     #warning "Check SOFTUART_TIMERTOP: increase prescaler, lower F_CPU or use a 16 bit timer"
 #endif
 
-#define SOFTUART_IN_BUF_SIZE     32
+#define SOFTUART_IN_BUF_SIZE     1
 
 // Init the Software Uart
 void softuart_init(void);
@@ -96,13 +96,13 @@ void softuart_init(void);
 void softuart_flush_input_buffer( void );
 
 // Tests whether an input character has been received.
-unsigned char softuart_kbhit( void );
+//unsigned char softuart_kbhit( void );
 
 // Reads a character from the input buffer, waiting if necessary.
-char softuart_getchar( void );
+//char softuart_getchar( void );
 
 // To check if transmitter is busy
-unsigned char softuart_transmit_busy( void );
+//unsigned char softuart_transmit_busy( void );
 
 // Writes a character to the serial port.
 void softuart_putchar( const char );
@@ -118,7 +118,7 @@ void softuart_puts( const char *s );
 
 // Write a NULL-terminated string from program-space (flash) 
 // to the serial port. example: softuart_puts_p(PSTR("test"))
-void softuart_puts_p( const char *prg_s );
+//void softuart_puts_p( const char *prg_s );
 
 // Helper-Macro - "automatically" inserts PSTR
 // when used: include avr/pgmspace.h before this include-file

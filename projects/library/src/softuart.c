@@ -292,7 +292,7 @@ void softuart_turn_rx_off( void )
 {
 	flag_rx_off = SU_TRUE;
 }
-
+/*
 char softuart_getchar( void )
 {
 	char ch;
@@ -323,7 +323,7 @@ unsigned char softuart_transmit_busy( void )
 {
 	return ( flag_tx_busy == SU_TRUE ) ? 1 : 0;
 }
-
+*/
 void softuart_putchar( const char ch )
 {
 	while ( flag_tx_busy == SU_TRUE ) {
@@ -341,10 +341,12 @@ void softuart_putchar( const char ch )
 void softuart_puts( const char *s )
 {
 	while ( *s ) {
+		if(s == '\0')
+			break;
 		softuart_putchar( *s++ );
 	}
 }
-	
+/*	
 void softuart_puts_p( const char *prg_s )
 {
 	char c;
@@ -352,4 +354,4 @@ void softuart_puts_p( const char *prg_s )
 	while ( ( c = pgm_read_byte( prg_s++ ) ) ) {
 		softuart_putchar(c);
 	}
-}
+}*/
