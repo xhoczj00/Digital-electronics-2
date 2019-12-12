@@ -39,7 +39,7 @@ char rcv_data[500] = "$GPRMC,080553.000,A,4913.6585,N,01634.4322,E,2.82,71.74,27
 char Latitude[11];
 char Longitude[11];
 T_GPS_data curr_data;
-int j = 0;
+int i = 0 ,j = 0;
 volatile bool received_frame = false;
 
 
@@ -63,13 +63,15 @@ int main(void)
 				//nokia_lcd_clear();
 				nokia_lcd_write_string("NO SIGNAL", 2);
 				nokia_lcd_render();
+                _delay_ms(500);
+                current_state = NEWDATA_STATE;
 				break;
 
 			
 			case NEWDATA_STATE:
 				gps_get_data(&rcv_data[0]);
 				parse_data(&curr_data);
-				
+				display_data();
 				current_state = IDLE_STATE;
 				break;
 				
@@ -107,51 +109,51 @@ void initialization(void)
 	
 void display_data(void)
 {
-	int i = 0;
+	int k = 0;
 	nokia_lcd_set_cursor(0,0);  // time
 	for(j = 0; j < 6; j++)
 	{
 		if(curr_data.time[j] != '\0')
 		{
 			nokia_lcd_write_char(curr_data.time[j],1);
-			rcv_data[i++] = curr_data.time[j];
+			rcv_data[k++] = curr_data.time[j];
 			if(j%2 ==1 && j!=5)
 			{
 				nokia_lcd_write_char(':',1);
-				rcv_data[i++] = ':';
+				rcv_data[k++] = ':';
 			}
 		}
 		
 	}
-    rcv_data[i++] = ';';
+    rcv_data[k++] = ';';
 	nokia_lcd_set_cursor(0,9);  //Latitude
 	nokia_lcd_write_char(curr_data.lat_dir,1);
-    rcv_data[i++] = curr_data.latitude_dir;
+    rcv_data[k++] = curr_data.lat_dir;
 	sprintf(Latitude,"%f",curr_data.latitude_deg);   
 	for(j = 0;j<9;j++)
 	{
-        if(curr_data.latitude_deg[j] != '\0')
+        if(Latitude[j] != '\0')
 		{
 		    nokia_lcd_write_char(Latitude[j],1);
-            rcv_data[i++] = curr_data.latitude_deg[j];
+            rcv_data[k++] = Latitude[j];
         }    
 	}
 	
-    rcv_data[i++] = ';';
+    rcv_data[k++] = ';';
 	nokia_lcd_set_cursor(0,18); // printing longitude
 	nokia_lcd_write_char(curr_data.lon_dir,1);
-    rcv_data[i++] = curr_data.lon_dir;
+    rcv_data[k++] = curr_data.lon_dir;
 	sprintf(Longitude,"%f",curr_data.longitude_deg);    
 	for(j = 0;j<9;j++)
 	{
-        if(curr_data.latitude_deg[j] != '\0')
+        if(Longitude[j] != '\0')
 		{
 		    nokia_lcd_write_char(Longitude[j],1);
-            rcv_data[i++] = curr_data.longitude_deg[j];
+            rcv_data[k++] = Longitude[j];
         }  
 	}
 	
-	rcv_data[i++] = ';';
+	rcv_data[k++] = ';';
 	nokia_lcd_set_cursor(0,27); 
 	nokia_lcd_write_string("Speed:",1);
 	for(j = 0;j<4;j++)
@@ -159,10 +161,10 @@ void display_data(void)
 		if(curr_data.speed_kmh[j] != '\0')
 		{   
             nokia_lcd_write_char(curr_data.speed_kmh[j],1);
-            rcv_data[i++] = curr_data.speed_kmh[j];
+            rcv_data[k++] = curr_data.speed_kmh[j];
         }  
 	}
-	rcv_data[i++] = ';';
+	rcv_data[k++] = ';';
 	nokia_lcd_set_cursor(72,27); 
 	nokia_lcd_write_string("AS",1);
 
@@ -173,21 +175,21 @@ void display_data(void)
         if(curr_data.altitude[j] != '\0')
 		{    
 		    nokia_lcd_write_char(curr_data.altitude[j],1);
-            rcv_data[i++] = curr_data.altitude[j];
+            rcv_data[k++] = curr_data.altitude[j];
         }      
 	}
 	
-    rcv_data[i++] = ';';
+    rcv_data[k++] = ';';
 	nokia_lcd_set_cursor(74,36); 
 	for(j = 0;j<1;j++)
 	{
         if(curr_data.num_of_act_sats[j] != '\0')
 		{    
 		    nokia_lcd_write_char(curr_data.num_of_act_sats[j],1);
-            rcv_data[i++] = curr_data.altitude[j];
+            rcv_data[k++] = curr_data.altitude[j];
         }      
 	}
-    rcv_data[i++] = ';';
+    rcv_data[k++] = ';';
   // nokia_lcd_write_string(rcv_data,1);
 	nokia_lcd_render();
 	softuart_puts(rcv_data);    // "implicit" PSTR
@@ -231,7 +233,7 @@ void display_data(void)
 	
 
     return (0);*/
-}
+
 
 ISR(USART_RX_vect)
 {
