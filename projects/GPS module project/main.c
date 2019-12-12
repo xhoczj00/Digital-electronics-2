@@ -25,6 +25,7 @@
 
 #define UART_BAUD_RATE 9600
 #define LED_PIN0     PD7
+#define _NOP() do { __asm__ __volatile__ ("nop"); } while (0)
 
 typedef enum 
 {
@@ -47,6 +48,7 @@ volatile bool received_frame = false;
 state_t current_state = START_STATE;
 void initialization(void);
 void display_data(void);
+extern asm();
 
 int main(void)
 {
@@ -89,7 +91,7 @@ int main(void)
 				
 			case IDLE_STATE:
 				//nokia_lcd_write_string(transmit_data,1);
-				_delay_ms(1);
+				_NOP();
 				//nokia_lcd_render();
 				break;
 
