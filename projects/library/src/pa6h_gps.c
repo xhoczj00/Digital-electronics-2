@@ -270,7 +270,6 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 			start = split_message(&msg->GPRMC_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
 			data->lat_dir = msg->GPRMC_msg[++start];
 			data->latitude_deg = NMEAtoDeg(&data->latitudeNMEA[0]);
-			//sprintf(data->latitude_deg_s, "%f", data->latitude_deg);
 	
 			start += 2;
 			stop = count_string(&msg->GPRMC_msg[0], start, ',');
@@ -327,7 +326,6 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 			start = split_message(&msg->GPGGA_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
 			data->lat_dir = msg->GPGGA_msg[++start];
 			data->latitude_deg = NMEAtoDeg(&data->latitudeNMEA[0]);
-			//sprintf(data->latitude_deg_s, "%f", data->latitude_deg);
 		
 			start += 2;
 			stop = count_string(&msg->GPGGA_msg[0], start, ',');

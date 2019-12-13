@@ -135,6 +135,7 @@ void initialization(void)
 	nokia_lcd_init();
 	nokia_lcd_power(1);
 	//nokia_lcd_write_picture();
+	
 	nokia_lcd_write_string("1648",1);
 	//
 	nokia_lcd_render();
@@ -147,17 +148,21 @@ void initialization(void)
 	TIM_config_interrupt(TIM2, TIM_OVERFLOW_DISABLE);
 
 	uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
-	//   softuart_init();
-	//    softuart_turn_rx_on(); /* redundant - on by default */
-
+	uart1_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
+	//softuart_init();
+	//softuart_turn_rx_on();
+	
 	sei();
+	uart1_puts("Time;Latitude;Longitude;Speed[km/h];Altitude[m];Active_Satelites;\r\n");
 }
 
 void display_data(void)
 {
 	k = 0;
-	//char comp[11];
-	//long a = curr_data->longitude_deg;
+	char comp[11];
+	char *transmit_data;
+
+	transmit_data = (char *)malloc(sizeof(char) * 100);
 	//char Longitude[11];
 	//Longitude = (char*)malloc(sizeof(char) * 20);
 	PORTD &= ~(1<<LED_PIN1);
@@ -168,46 +173,46 @@ void display_data(void)
 		if(curr_data->time[j] != '\0')
 		{
 			nokia_lcd_write_char(curr_data->time[j],1);
-			//transmit_data[k++] = curr_data->time[j];
+			transmit_data[k++] = curr_data->time[j];
 			if(j%2 ==1 && j!=5)
 			{
 				nokia_lcd_write_char(':',1);
-				//transmit_data[k++] = ':';
+				transmit_data[k++] = ':';
 			}
 		}
 		
 	}
-	//transmit_data[k++] = ';';
+	transmit_data[k++] = ';';
 	nokia_lcd_set_cursor(0,9);  //Latitude
 	nokia_lcd_write_char(curr_data->lat_dir,1);
-	//transmit_data[k++] = curr_data->lat_dir;
-	//sprintf(comp,"%f",curr_data->latitude_deg);
+	transmit_data[k++] = curr_data->lat_dir;
+	sprintf(comp,"%f",curr_data->latitude_deg);
 	for(j = 0;j<9;j++)
 	{
-		if(curr_data->latitudeNMEA[j] != '\0')
+		if(comp[j] != '\0')
 		{
-			nokia_lcd_write_char(curr_data->latitudeNMEA[j],1);
-			//transmit_data[k++] = Latitude[j];
+			nokia_lcd_write_char(comp[j],1);
+			transmit_data[k++] = comp[j];
 		}
 	}
 	
-	//transmit_data[k++] = ';';
+	transmit_data[k++] = ';';
 	nokia_lcd_set_cursor(0,18); // printing longitude
 	nokia_lcd_write_char(curr_data->lon_dir,1);
-	//transmit_data[k++] = curr_data->lon_dir;
+	transmit_data[k++] = curr_data->lon_dir;
 	//a = a *10000000;
 	//itoa(a, Longitude, 10);
-	//sprintf(Longitude,"%f",a);
+	sprintf(comp,"%f",curr_data->longitude_deg);
 	for(j = 0;j<9;j++)
 	{
-		if(curr_data->longitudeNMEA[j] != '\0')
+		if(comp[j] != '\0')
 		{
-			nokia_lcd_write_char(curr_data->longitudeNMEA[j],1);
-			//transmit_data[k++] = Longitude[j];
+			nokia_lcd_write_char(comp[j],1);
+			transmit_data[k++] = comp[j];
 		}
 	}
 	
-	//transmit_data[k++] = ';';
+	transmit_data[k++] = ';';
 	nokia_lcd_set_cursor(0,27);
 	nokia_lcd_write_string("Speed:",1);
 	for(j = 0;j<4;j++)
@@ -215,10 +220,10 @@ void display_data(void)
 		if(curr_data->speed_kmh[j] != '\0')
 		{
 			nokia_lcd_write_char(curr_data->speed_kmh[j],1);
-			//transmit_data[k++] = curr_data->speed_kmh[j];
+			transmit_data[k++] = curr_data->speed_kmh[j];
 		}
 	}
-	//transmit_data[k++] = ';';
+	transmit_data[k++] = ';';
 	nokia_lcd_set_cursor(72,27);
 	nokia_lcd_write_string("AS",1);
 
@@ -229,32 +234,32 @@ void display_data(void)
 		if(curr_data->altitude[j] != '\0')
 		{
 			nokia_lcd_write_char(curr_data->altitude[j],1);
-			//transmit_data[k++] = curr_data->altitude[j];
+			transmit_data[k++] = curr_data->altitude[j];
 		}
 	}
 	
-	//transmit_data[k++] = ';';
+	transmit_data[k++] = ';';
 	nokia_lcd_set_cursor(74,36);
 	for(j = 0;j<1;j++)
 	{
 		if(curr_data->num_of_act_sats[j] != '\0')
 		{
 			nokia_lcd_write_char(curr_data->num_of_act_sats[j],1);
-			//transmit_data[k++] = curr_data->num_of_act_sats[j];
+			transmit_data[k++] = curr_data->num_of_act_sats[j];
 		}
 	}
-	//transmit_data[k++] = ';';
-	//transmit_data[k++] = '\r';
-	// transmit_data[k++] = '\n';
-	// transmit_data[k++] = '\0';
+	transmit_data[k++] = ';';
+	transmit_data[k++] = '\r';
+    transmit_data[k++] = '\n';
+	transmit_data[k++] = '\0';
 	// nokia_lcd_write_string(rcv_data,1);
 	nokia_lcd_render();
-	//	softuart_puts(transmit_data);    // "implicit" PSTR
-	//softuart_puts( "--\r\n" );  // string "from RAM"
+	//	softuart_puts(transmit_data);  
+	uart1_puts(transmit_data);
 	//received_frame = 0;
 	//  PORTD &= ~(1<<LED_PIN0);
 	PORTD |= (1<<LED_PIN1);
-	//free(Longitude);
+	free(transmit_data);
 }
 
 
