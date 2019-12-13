@@ -24,7 +24,7 @@ SRCS += $(LIBRARY_DIR)/src/gpio.c
 #SRCS += $(LIBRARY_DIR)/src/segment.c
 SRCS += $(LIBRARY_DIR)/src/nokia5110.c
 SRCS += $(LIBRARY_DIR)/src/pa6h_gps.c
-SRCS += $(LIBRARY_DIR)/src/softuart.c
+#SRCS += $(LIBRARY_DIR)/src/softuart.c
 ASSRC := $(wildcard *.S)
 
 
@@ -92,7 +92,7 @@ size : $(TARGET).elf
 # https://www.nongnu.org/avrdude/user-manual/avrdude_4.html
 flash : $(TARGET).hex
 	@echo "Flashing program memory\t$<"
-	@$(AVRDUDE) -p $(MCU_DUDE) -c arduino -D -V -u -q -U flash:w:$(TARGET).hex:i -P $(USBPORT)
+	@$(AVRDUDE) -p $(MCU_DUDE) -c wiring -D -V -u -q -U flash:w:$(TARGET).hex:i -P $(USBPORT)
 
 ## Clean rule
 clean :

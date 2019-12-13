@@ -3,10 +3,14 @@
 #
 
 TARGET    = DEMO
-MCU       = atmega328p
-MCU_DUDE  = m328p
+#MCU       = atmega328p
+MCU       = atmega2560
+#MCU_DUDE  = m328p
+MCU_DUDE  = m2560
 F_CPU     = 16000000
 USBPORT   = /dev/ttyUSB0
+#PROGRAMMER= arduino
+PROGRAMMER= wiring
 
 ## AVR 8-bit toolchain
 # https://www.microchip.com/mplab/avr-support/avr-and-arm-toolchains-c-compilers
@@ -32,11 +36,12 @@ RMFILES = *.o *.hex *.map *.elf *.lss
 
 # Extra flags to give to the C compiler
 # https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
-CFLAGS  = -std=c99 -Wall -g -Os -mmcu=$(MCU) -DF_CPU=$(F_CPU)UL -I. -I$(LIBRARY_DIR)/inc
+CFLAGS  = -std=c99 -Wall -Wextra -g -Os -mmcu=$(MCU) -DF_CPU=$(F_CPU)UL -I. -I$(LIBRARY_DIR)/inc
 # Extra flags to give to the assembler
 ASFLAGS  = -mmcu=$(MCU) -Wall -I$(LIBRARY_DIR)/inc
 # Extra flags to give to compilers when they are supposed to invoke the linker
-LDFLAGS = -mmcu=$(MCU) -Wl,-Map=$(TARGET).map -Wl,--cref -Wl,-u,vfprintf -lprintf_flt -lm
+LDFLAGS = -mmcu=$(MCU) -Wl,-Map=$(TARGET).map -Wl,--cref
 
 # We define all the targets that are not files
 .PHONY = all list size flash clean
+

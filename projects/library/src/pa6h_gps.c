@@ -11,25 +11,28 @@
 #include <stdio.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <util/delay.h>
 #include "pa6h_gps.h"
 #include "uart.h"
+#include "nokia5110.h"
 //
 
 //
 
-T_GPS_data data;
+//T_GPS_data data;
 
 
 int frame_split(char *rcv_msg, T_GPS_msgs *msg, int start, int stop)	//splitting messages out of frame and adding them in GPS_msgs structure
 {
 	char name[6];
-	char GPRMCname[6] = "$GPRMC";
+	/*char GPRMCname[6] = "$GPRMC";
 	char GPVTGname[6] = "$GPVTG";
 	char GPGGAname[6] = "$GPGGA";
 	char GPGSAname[6] = "$GPGSA";
 	char GPGSVname[6] = "$GPGSV";
+	*/
 	char GPGSVmsg_number = 0;
-	char num_of_GPGSVmsgs = 0;
+	//char num_of_GPGSVmsgs = 0;
 	int i = 0;
 	
 	for(i = 0; i < 6; i++)							//get name of current message
@@ -38,41 +41,45 @@ int frame_split(char *rcv_msg, T_GPS_msgs *msg, int start, int stop)	//splitting
 	}
 
 													//copy message into right place in structure
-	if (compare_two_strings(&name[0],&GPRMCname[0],6) == 1)		//GPRMC
+	if (compare_two_strings(&name[0],"$GPRMC",6) == 1)		//GPRMC
 	{
 		for(i = start; i < stop; i++)
 		{
 			msg->GPRMC_msg[i - start] = rcv_msg[i];
 		}
-		msg->GPRMC_fresh = true;
+		msg->GPRMC_msg[i - start + 1]= '\0';
+		msg->GPRMC_fresh = 1;
 	}
-	else if (compare_two_strings(&name[0],&GPVTGname[0],6) == 1)	//GPVTG
+	else if (compare_two_strings(&name[0],"$GPVTG",6) == 1)	//GPVTG
 	{
 		for(i = start; i < stop; i++)
 		{
 			msg->GPVTG_msg[i - start] = rcv_msg[i];
 		}
-		msg->GPVTG_fresh = true;
+		msg->GPVTG_msg[i - start + 1]= '\0';
+		msg->GPVTG_fresh = 1;
 	}
-	else if (compare_two_strings(&name[0],&GPGGAname[0],6) == 1)	//GPGGA
+	else if (compare_two_strings(&name[0],"$GPGGA",6) == 1)	//GPGGA
 	{
 		for(i = start; i < stop; i++)
 		{
 			msg->GPGGA_msg[i - start] = rcv_msg[i];
 		}
-		msg->GPGGA_fresh = true;
+		msg->GPGGA_msg[i - start + 1]= '\0';
+		msg->GPGGA_fresh = 1;
 	}
-	else if (compare_two_strings(&name[0],&GPGSAname[0],6) == 1)	//GPGSA
+	else if (compare_two_strings(&name[0],"$GPGSA",6) == 1)	//GPGSA
 	{
 		for(i = start; i < stop; i++)
 		{
 			msg->GPGSA_msg[i - start] = rcv_msg[i];
 		}
-		msg->GPGSA_fresh = true;
+		msg->GPGSA_msg[i - start + 1]= '\0';
+		msg->GPGSA_fresh = 1;
 	}
-	else if (compare_two_strings(&name[0],&GPGSVname[0],6) == 1)	//GPGSV, max 4 messages in row
+	else if (compare_two_strings(&name[0],"$GPGSV",6) == 1)	//GPGSV, max 4 messages in row
 	{										
-		num_of_GPGSVmsgs = rcv_msg[start + 7];			//get number of messages in row
+		//num_of_GPGSVmsgs = rcv_msg[start + 7];			//get number of messages in row
 		GPGSVmsg_number = rcv_msg[start + 9];			//get number of current message	
 
 		switch(GPGSVmsg_number)
@@ -82,32 +89,33 @@ int frame_split(char *rcv_msg, T_GPS_msgs *msg, int start, int stop)	//splitting
 				{
 					msg->GPGSV1_msg[i - start] = rcv_msg[i];;
 				}
-				msg->GPGSV1_fresh = true;
+				msg->GPGSV1_msg[i - start + 1]= '\0';
+				msg->GPGSV1_fresh = 1;
 				break;
 			/*case '2':									//2nd message
 				for(i = start; i < stop; i++)
 				{
 					msg->GPGSV2_msg[i - start] = rcv_msg[i];;
 				}
-				msg->GPGSV2_fresh = true;
+				msg->GPGSV2_fresh = 1;
 				break;
 			case '3':									//3rd message
 				for(i = start; i < stop; i++)
 				{
 					msg->GPGSV3_msg[i - start] = rcv_msg[i];;
 				}
-				msg->GPGSV3_fresh = true;
+				msg->GPGSV3_fresh = 1;
 				break;
 			case '4':
 				for(i = start; i < stop; i++)			//4th message
 				{
 					msg->GPGSV3_msg[i - start] = rcv_msg[i];;
 				}
-				msg->GPGSV3_fresh = true;
+				msg->GPGSV3_fresh = 1;
 				break;
 			*/
 			default:
-				msg->GPGSV1_fresh = false;
+				msg->GPGSV1_fresh = 0;
 				break;
 		}
 	}
@@ -118,7 +126,13 @@ int count_string(char *string, int start, char end_character)        //return po
 {
 	int i,count=0;
 	for (i = start; string[i] != end_character; i++)
+	{
 		count++;
+		if(string[i] == '\0')
+			return 0;
+		
+	}
+		
 	return (start + count);
 }
 
@@ -137,33 +151,39 @@ char compare_two_strings(char *str1, char *str2, int length)		//comparing two st
 }
 
 
-void gps_get_data(char *received_data, T_GPS_data *data)
+void gps_get_data(char *received_frame, T_GPS_data *data)
 {
-	int  length = 0, start = 0, stop = 0;
+	
 	T_GPS_msgs *msg;
 
 	cli();
 	
-	msg = (T_GPS_msgs*)(sizeof(T_GPS_msgs));
+	msg = (T_GPS_msgs*)malloc(sizeof(T_GPS_msgs));
+	int  start = 0, stop = 1; //length = 0
 	
-	msg->GPRMC_fresh = false;
-	msg->GPVTG_fresh = false;
-	msg->GPGGA_fresh = false;
-	msg->GPGSA_fresh = false;
-	msg->GPGSV1_fresh = false;
-	//msg.GPGSV2_fresh = false;
-	//msg.GPGSV3_fresh = false;
-	//msg.GPGSV4_fresh = false;
+	msg->GPRMC_fresh = 0;
+	msg->GPVTG_fresh = 0;
+	msg->GPGGA_fresh = 0;
+	msg->GPGSA_fresh = 0;
+	msg->GPGSV1_fresh = 0;
+	//msg.GPGSV2_fresh = 0;
+	//msg.GPGSV3_fresh = 0;
+	//msg.GPGSV4_fresh = 0;
 	
-	stop = count_string(received_data, start, '\n');		//stop position of first message out of frame
-	while(length < 83)									//NMEA messages are always less than 83 characters
+	stop = count_string(received_frame, start, '\n');		//stop position of first message out of frame
+	while(stop != 0)									//NMEA messages are always less than 83 characters
 	{
-		start = frame_split(received_data, &msg, start, stop);	//split message and return start position for new message
-		stop = count_string(received_data, ++start, '\n');	//find next end of message
-		length = stop - start;							
+		start = frame_split(received_frame, msg, start, stop);	//split message and return start position for new message
+		stop = count_string(received_frame, ++start, '\n');	//find next end of message
+		//length = stop - start;							
 	}
-	free(received_data);
+
+	free(received_frame);
+	_delay_ms(10);
 	parse_data(data, msg);
+	
+	free(msg);
+	_delay_ms(10);
 	sei();
 }
 
@@ -219,18 +239,26 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 {
 	volatile int start = 7, stop = 0;	
 
-	cli();
-	if(msg->GPRMC_msg[18] == 'V')		//if invalid messages return from function
+	//cli();
+	/*nokia_lcd_clear();
+	nokia_lcd_set_cursor(0,0);
+	nokia_lcd_write_string(msg->GPRMC_msg,1);
+	nokia_lcd_render();
+	
+*/
+
+	if(msg->GPRMC_msg[18] == 'A')	//parse data only if messages are valid
 	{
-		data->valid = false;
-		//data.valid = false;
+		data->valid = 1;
+	}
+	else//if(msg->GPRMC_msg[18] == 'V')		//if invalid messages return from function
+	{
+		data->valid = 0;
 		return;						
 	}
-	else if(msg->GPRMC_msg[18] == 'A')	//parse data only if messages are valid
-		data->valid = true;
 
 	//GPRMC=========================================================================================
-	if(msg->GPRMC_fresh == true)												//minimum GPS data
+	if(msg->GPRMC_fresh == 1)												//minimum GPS data
 	{
 		if(check_checksum(msg->GPRMC_msg) == 1)		//parse only if received and calculated checksum are same
 		{
@@ -242,6 +270,7 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 			start = split_message(&msg->GPRMC_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
 			data->lat_dir = msg->GPRMC_msg[++start];
 			data->latitude_deg = NMEAtoDeg(&data->latitudeNMEA[0]);
+			//sprintf(data->latitude_deg_s, "%f", data->latitude_deg);
 	
 			start += 2;
 			stop = count_string(&msg->GPRMC_msg[0], start, ',');
@@ -260,12 +289,13 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 			start++;
 			stop = count_string(&msg->GPRMC_msg[0], start, ',');
 			start = split_message(&msg->GPRMC_msg[0], &data->date[0], start, stop);				//date
+			
 		}
 	}
 	//GPVTG==========================================================================================
 	start = 7;														//speed and track info
 	stop = 0;
-	if(msg->GPVTG_fresh == true)
+	if(msg->GPVTG_fresh == 1)
 	{
 		if(check_checksum(msg->GPVTG_msg) == 1)		//parse only if received and calculated checksum are same
 		{
@@ -285,7 +315,7 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 	//GPGGA==============================================================================================
 	start = 7;													//GPS fix info
 	stop = 0;
-	if(msg->GPGGA_fresh == true)
+	if(msg->GPGGA_fresh == 1)
 	{
 		if(check_checksum(msg->GPGGA_msg) == 1)		//parse only if received and calculated checksum are same
 		{
@@ -297,6 +327,7 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 			start = split_message(&msg->GPGGA_msg[0], &data->latitudeNMEA[0], start, stop);		//latitude
 			data->lat_dir = msg->GPGGA_msg[++start];
 			data->latitude_deg = NMEAtoDeg(&data->latitudeNMEA[0]);
+			//sprintf(data->latitude_deg_s, "%f", data->latitude_deg);
 		
 			start += 2;
 			stop = count_string(&msg->GPGGA_msg[0], start, ',');
@@ -312,6 +343,7 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 			stop = count_string(&msg->GPGGA_msg[0], start, ',');
 			start = split_message(&msg->GPGGA_msg[0], &data->altitude[0], start, stop);			//altitude
 
+		
 		}
 	}
 	//GPGSA==============================================================================================
@@ -319,7 +351,7 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 	stop = 0;
 	if(check_checksum(msg.GPGSA_msg) == 1)		//parse only if received and calculated checksum are same
 	{
-		if(msg.GPGSA_fresh == true)
+		if(msg.GPGSA_fresh == 1)
 		{
 			
 		}
@@ -329,7 +361,7 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 	//GPGSV==============================================================================================
 	start = 11;													//number and IDs of satellites in view
 	stop = 0;
-	if(msg->GPGSV1_fresh == true)
+	if(msg->GPGSV1_fresh == 1)
 	{
 		if(check_checksum(msg->GPGSV1_msg) == 1)		//parse only if received and calculated checksum are same
 		{
@@ -338,29 +370,29 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 		}
 	}
 	/*
-	if(msg.GPGSV2_fresh == true)
+	if(msg.GPGSV2_fresh == 1)
 	{
 		if(check_checksum(msg.GPGSV2_msg) == 1)	
 		{
 		}
 		
 	}
-	if(msg.GPGSV3_fresh == true)
+	if(msg.GPGSV3_fresh == 1)
 	{
 		if(check_checksum(msg.GPGSV3_msg) == 1)	
 		{
 		}
 	}
 	
-	if(msg.GPGSV4_fresh == true)
+	if(msg.GPGSV4_fresh == 1)
 	{
 		if(check_checksum(msg.GPGSV4_msg) == 1)
 		{
 		}
 	}
 	*/
-	free(msg);
-	sei();
+	//free(msg);
+	//sei();
 }
 
 float NMEAtoDeg(char *NMEA)					//convert NMEA latitude and longitude format to degrees

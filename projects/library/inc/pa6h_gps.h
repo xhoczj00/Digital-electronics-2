@@ -9,19 +9,20 @@
 #ifndef PA6H_GPS_H_
 #define PA6H_GPS_H_
 
-#include <stdbool.h>
+//#include <stdbool.h>
 
 //char rcv_data[500];
 
 
 typedef struct GPS_data
 {
-	bool valid;
+	char valid;
 	char time[7];
 	char date[7];
 	char latitudeNMEA[10];
 	char lat_dir;
 	float latitude_deg;
+	//char latitude_deg_s[11];
 	char longitudeNMEA[11];
 	char lon_dir;
 	float longitude_deg;
@@ -37,22 +38,22 @@ typedef struct GPS_data
 
 typedef struct GPS_msgs
 {
-	char GPRMC_msg[83];
-	char GPVTG_msg[83];
-	char GPGGA_msg[83];
-	char GPGSA_msg[83];
-	char GPGSV1_msg[83];
+	char GPRMC_msg[84];
+	char GPVTG_msg[84];
+	char GPGGA_msg[84];
+	char GPGSA_msg[84];
+	char GPGSV1_msg[84];
 	//char GPGSV2_msg[83];
 	//char GPGSV3_msg[83];
 	//char GPGSV4_msg[83];
-	bool GPRMC_fresh;
-	bool GPVTG_fresh;
-	bool GPGGA_fresh;
-	bool GPGSA_fresh;
-	bool GPGSV1_fresh;
-	//bool GPGSV2_fresh;
-	//bool GPGSV3_fresh;
-	//bool GPGSV4_fresh;
+	char GPRMC_fresh;
+	char GPVTG_fresh;
+	char GPGGA_fresh;
+	char GPGSA_fresh;
+	char GPGSV1_fresh;
+	//char GPGSV2_fresh;
+	//char GPGSV3_fresh;
+	//char GPGSV4_fresh;
 }T_GPS_msgs;
 
 

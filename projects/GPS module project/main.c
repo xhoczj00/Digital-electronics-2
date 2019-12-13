@@ -14,7 +14,7 @@
 #include <avr/io.h>
 #include <stdio.h>
 #include <stdlib.h> 
-#include <stdbool.h>
+//#include <stdbool.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include "nokia5110.h"
@@ -25,6 +25,7 @@
 
 #define UART_BAUD_RATE 9600
 #define LED_PIN0     PD7
+#define LED_PIN1     PD6
 #define _NOP() do { __asm__ __volatile__ ("nop"); } while (0)
 
 typedef enum 
@@ -39,27 +40,31 @@ typedef enum
 //char transmit_data[200];
 
 char *rcv_data = NULL;
-T_GPS_data curr_data;
+T_GPS_data *curr_data;
 int i = 0 ,j = 0, k = 0;
-volatile bool received_frame = false;
+//volatile char received_frame = 0;
 
 
 
-state_t current_state = START_STATE;
+state_t current_state;// = START_STATE;
 void initialization(void);
 void display_data(void);
 
 
+
 int main(void)
 {
+	current_state = START_STATE;
+	//curr_data = (T_GPS_data*)malloc(sizeof(T_GPS_data));
+	//curr_data.valid = 0;
 	for(;;)
 	{
 		switch (current_state)
 		{
 			case START_STATE:
 				initialization();
-				rcv_data = (char *)malloc(sizeof(char) * 500);
-				//rcv_data = "$GPGGA,080355.092,4913.6150,N,01634.4185,E,1,5,3.63,292.7,M,43.5,M,,*56\r\n$GPGSA,A,3,03,23,11,19,17,,,,,,,,3.75,3.63,0.93*03\r\n$GPRMC,080355.092,A,4913.6150,N,01634.4185,E,1.66,253.58,271119,,,A*6E\r\n$GPVTG,253.58,T,,M,1.66,N,3.08,K,A*3E";
+				rcv_data = (char *)malloc(sizeof(char) * 600);
+				
 				//	char header[] ={"Time;Latitude;Longitude;Speed[kmh];Altitude;ActSats;\r\n"};
 				//	softuart_puts(header);
 				current_state = NOGPS_STATE;
@@ -67,28 +72,44 @@ int main(void)
 
 			
 			case NOGPS_STATE:
-				//nokia_lcd_clear();
+				nokia_lcd_clear();
 				nokia_lcd_set_cursor(10,16);
 				nokia_lcd_write_string("NO GPS", 2);
 				nokia_lcd_render();
-				nokia_lcd_clear();
-				current_state =  NEWDATA_STATE;//IDLE_STATE;
+				//nokia_lcd_clear();
+				current_state =  IDLE_STATE; //NEWDATA_STATE;
 				break;
 
 			
 			case NEWDATA_STATE:
+				//nokia_lcd_clear();
+				//nokia_lcd_render();
+				//nokia_lcd_clear();
+				
+				//_delay_ms(100);
+				//nokia_lcd_render();
+				//curr_data.valid = 0;
+				//curr_data = (T_GPS_data*)malloc(sizeof(T_GPS_data));
+				curr_data = (T_GPS_data*)malloc(sizeof(T_GPS_data));
+				gps_get_data(&rcv_data[0],curr_data);
 				nokia_lcd_clear();
-				gps_get_data(&rcv_data[0],&curr_data);
+					//nokia_lcd_render();
+				//display_data();
 				//parse_data(&curr_data);
-				if(curr_data.valid == true)
+				
+				if(curr_data->valid == 1)
 				{
+					nokia_lcd_clear();
+					//nokia_lcd_render();
 					display_data();
 				}
 				else
 				{
 					current_state = NOGPS_STATE;
 				}
-				rcv_data = (char *)malloc(sizeof(char) * 500);
+				
+				free(curr_data);
+				rcv_data = (char *)malloc(sizeof(char) * 600);
 				current_state = IDLE_STATE;
 				break;
 			
@@ -110,15 +131,18 @@ void initialization(void)
 {
 	//GPIO_config_output(&DDRD, LED_PIN0);
 	DDRD|=_BV(LED_PIN0);
+	DDRD|=_BV(LED_PIN1);
 	nokia_lcd_init();
 	nokia_lcd_power(1);
+	//nokia_lcd_write_picture();
 	nokia_lcd_write_string("1648",1);
 	//
 	nokia_lcd_render();
-	_delay_ms(500);
+	_delay_ms(1500);
 	nokia_lcd_clear();
 	nokia_lcd_render();
-	PORTD &= ~(1<<LED_PIN0);
+	PORTD |= (1<<LED_PIN0);
+	PORTD |= (1<<LED_PIN1);
 	TIM_config_prescaler(TIM2, TIM_PRESC_256);
 	TIM_config_interrupt(TIM2, TIM_OVERFLOW_DISABLE);
 
@@ -132,16 +156,19 @@ void initialization(void)
 void display_data(void)
 {
 	k = 0;
-	char Latitude[11];
-	char Longitude[11];
-	
+	//char comp[11];
+	//long a = curr_data->longitude_deg;
+	//char Longitude[11];
+	//Longitude = (char*)malloc(sizeof(char) * 20);
+	PORTD &= ~(1<<LED_PIN1);
+
 	nokia_lcd_set_cursor(0,0);  // time
 	for(j = 0; j < 6; j++)
 	{
-		if(curr_data.time[j] != '\0')
+		if(curr_data->time[j] != '\0')
 		{
-			nokia_lcd_write_char(curr_data.time[j],1);
-			//transmit_data[k++] = curr_data.time[j];
+			nokia_lcd_write_char(curr_data->time[j],1);
+			//transmit_data[k++] = curr_data->time[j];
 			if(j%2 ==1 && j!=5)
 			{
 				nokia_lcd_write_char(':',1);
@@ -152,28 +179,30 @@ void display_data(void)
 	}
 	//transmit_data[k++] = ';';
 	nokia_lcd_set_cursor(0,9);  //Latitude
-	nokia_lcd_write_char(curr_data.lat_dir,1);
-	//transmit_data[k++] = curr_data.lat_dir;
-	sprintf(Latitude,"%f",curr_data.latitude_deg);
+	nokia_lcd_write_char(curr_data->lat_dir,1);
+	//transmit_data[k++] = curr_data->lat_dir;
+	//sprintf(comp,"%f",curr_data->latitude_deg);
 	for(j = 0;j<9;j++)
 	{
-		if(Latitude[j] != '\0')
+		if(curr_data->latitudeNMEA[j] != '\0')
 		{
-			nokia_lcd_write_char(Latitude[j],1);
+			nokia_lcd_write_char(curr_data->latitudeNMEA[j],1);
 			//transmit_data[k++] = Latitude[j];
 		}
 	}
 	
 	//transmit_data[k++] = ';';
 	nokia_lcd_set_cursor(0,18); // printing longitude
-	nokia_lcd_write_char(curr_data.lon_dir,1);
-	//transmit_data[k++] = curr_data.lon_dir;
-	sprintf(Longitude,"%f",curr_data.longitude_deg);
+	nokia_lcd_write_char(curr_data->lon_dir,1);
+	//transmit_data[k++] = curr_data->lon_dir;
+	//a = a *10000000;
+	//itoa(a, Longitude, 10);
+	//sprintf(Longitude,"%f",a);
 	for(j = 0;j<9;j++)
 	{
-		if(Longitude[j] != '\0')
+		if(curr_data->longitudeNMEA[j] != '\0')
 		{
-			nokia_lcd_write_char(Longitude[j],1);
+			nokia_lcd_write_char(curr_data->longitudeNMEA[j],1);
 			//transmit_data[k++] = Longitude[j];
 		}
 	}
@@ -183,10 +212,10 @@ void display_data(void)
 	nokia_lcd_write_string("Speed:",1);
 	for(j = 0;j<4;j++)
 	{
-		if(curr_data.speed_kmh[j] != '\0')
+		if(curr_data->speed_kmh[j] != '\0')
 		{
-			nokia_lcd_write_char(curr_data.speed_kmh[j],1);
-			//transmit_data[k++] = curr_data.speed_kmh[j];
+			nokia_lcd_write_char(curr_data->speed_kmh[j],1);
+			//transmit_data[k++] = curr_data->speed_kmh[j];
 		}
 	}
 	//transmit_data[k++] = ';';
@@ -197,10 +226,10 @@ void display_data(void)
 	nokia_lcd_write_string("Alt:",1);
 	for(j = 0;j<5;j++)
 	{
-		if(curr_data.altitude[j] != '\0')
+		if(curr_data->altitude[j] != '\0')
 		{
-			nokia_lcd_write_char(curr_data.altitude[j],1);
-			//transmit_data[k++] = curr_data.altitude[j];
+			nokia_lcd_write_char(curr_data->altitude[j],1);
+			//transmit_data[k++] = curr_data->altitude[j];
 		}
 	}
 	
@@ -208,10 +237,10 @@ void display_data(void)
 	nokia_lcd_set_cursor(74,36);
 	for(j = 0;j<1;j++)
 	{
-		if(curr_data.num_of_act_sats[j] != '\0')
+		if(curr_data->num_of_act_sats[j] != '\0')
 		{
-			nokia_lcd_write_char(curr_data.num_of_act_sats[j],1);
-			//transmit_data[k++] = curr_data.num_of_act_sats[j];
+			nokia_lcd_write_char(curr_data->num_of_act_sats[j],1);
+			//transmit_data[k++] = curr_data->num_of_act_sats[j];
 		}
 	}
 	//transmit_data[k++] = ';';
@@ -222,8 +251,10 @@ void display_data(void)
 	nokia_lcd_render();
 	//	softuart_puts(transmit_data);    // "implicit" PSTR
 	//softuart_puts( "--\r\n" );  // string "from RAM"
-	//received_frame = false;
+	//received_frame = 0;
 	//  PORTD &= ~(1<<LED_PIN0);
+	PORTD |= (1<<LED_PIN1);
+	//free(Longitude);
 }
 
 
@@ -234,27 +265,35 @@ void display_data(void)
 
 
 
-ISR(USART_RX_vect)
+ISR(USART0_RX_vect)
 {
 	TCNT2 = 0;
+	TIFR2 = TIFR2 | (1<<TOV2);
 	//GPIO_write(&DDRD,LED_PIN0,0);
 	PORTD &= ~(1<<LED_PIN0);
 	rcv_data[i++] = UDR0;
-	TIM_config_interrupt(TIM2, TIM_OVERFLOW_ENABLE);
+	TIMSK2 = TIMSK2 | _BV(TOIE2);
+	//TIM_config_interrupt(TIM2, TIM_OVERFLOW_ENABLE);
 	
 }
 ISR(TIMER2_OVF_vect)
 //ISR(TIMER1_OVF_vect)
 {
+	rcv_data[++i] = '\0';
 	i = 0;
-	//rcvd_frame = true;
+	//rcvd_frame = 1;
 	//if(rcv_data[0] != 0)
 	
 	
-
+	
 	//GPIO_write(&DDRD,LED_PIN0,1);
 	PORTD |= (1<<LED_PIN0);
 	current_state = NEWDATA_STATE;
+	TIMSK2 = TIMSK2 & ~_BV(TOIE2);
+	//TIM_config_interrupt(TIM2, TIM_OVERFLOW_DISABLE);
 	
-	TIM_config_interrupt(TIM2, TIM_OVERFLOW_DISABLE);
+	
+	//
+
+
 }
