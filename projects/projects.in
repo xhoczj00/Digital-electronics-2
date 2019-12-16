@@ -3,14 +3,14 @@
 #
 
 TARGET    = DEMO
-MCU       = atmega328p
-#MCU       = atmega2560
-MCU_DUDE  = m328p
-#MCU_DUDE  = m2560
+#MCU       = atmega328p
+MCU       = atmega2560
+#MCU_DUDE  = m328p
+MCU_DUDE  = m2560
 F_CPU     = 16000000
 USBPORT   = /dev/ttyUSB0
-PROGRAMMER= arduino
-#PROGRAMMER= wiring
+#PROGRAMMER= arduino
+PROGRAMMER= wiring
 
 ## AVR 8-bit toolchain
 # https://www.microchip.com/mplab/avr-support/avr-and-arm-toolchains-c-compilers

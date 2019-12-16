@@ -179,11 +179,11 @@ void gps_get_data(char *received_frame, T_GPS_data *data)
 	}
 
 	free(received_frame);
-	_delay_ms(10);
+	//_delay_ms(10);
 	parse_data(data, msg);
 	
 	free(msg);
-	_delay_ms(10);
+	//_delay_ms(10);
 	sei();
 }
 
