@@ -112,24 +112,21 @@ int main(void)
 
 void initialization(void)
 {
-	nokia_lcd_init();
-	nokia_lcd_power(1);
-	
-	nokia_lcd_write_picture();
-	
-	nokia_lcd_render();
-	_delay_ms(1500);
-	nokia_lcd_clear();
-	nokia_lcd_render();
-	
 	TIM_config_prescaler(TIM2, TIM_PRESC_256);
 	TIM_config_interrupt(TIM2, TIM_OVERFLOW_DISABLE);
 
 	uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
 	uart1_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
+
+	_delay_ms(50);
+	nokia_lcd_init();
+	nokia_lcd_power(1);
+	_delay_ms(50);
+	nokia_lcd_write_picture();
+	nokia_lcd_render();
+	_delay_ms(1500);
 	
 	sei();
-	
 }
 
 void display_data(void)
