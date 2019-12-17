@@ -9,20 +9,14 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <avr/interrupt.h>
 #include <avr/io.h>
 #include <util/delay.h>
 #include "pa6h_gps.h"
-#include "uart.h"
 #include "nokia5110.h"
-//
-
-//
-
-//T_GPS_data data;
 
 
-int frame_split(char *rcv_msg, T_GPS_msgs *msg, int start, int stop)	//splitting messages out of frame and adding them in GPS_msgs structure
+
+int frame_split(char *rcv_msg, T_GPS_msgs *msg, int start, int stop)	//splitting messages out of frame and copying them in GPS_msgs structure
 {
 	char name[6];
 	/*char GPRMCname[6] = "$GPRMC";
@@ -80,7 +74,7 @@ int frame_split(char *rcv_msg, T_GPS_msgs *msg, int start, int stop)	//splitting
 	else if (compare_two_strings(&name[0],"$GPGSV",6) == 1)	//GPGSV, max 4 messages in row
 	{										
 		//num_of_GPGSVmsgs = rcv_msg[start + 7];			//get number of messages in row
-		GPGSVmsg_number = rcv_msg[start + 9];			//get number of current message	
+		GPGSVmsg_number = rcv_msg[start + 9];				//get number of current message	
 
 		switch(GPGSVmsg_number)
 		{
@@ -122,9 +116,9 @@ int frame_split(char *rcv_msg, T_GPS_msgs *msg, int start, int stop)	//splitting
 	return stop;
 }
 
-int count_string(char *string, int start, char end_character)        //return position of end character after start in input string
+int count_string(char *string, int start, char end_character)        	//return position of end character after start in input string, if \0 is in start return 0
 {
-	int i,count=0;
+	int i,count = 0;
 	for (i = start; string[i] != end_character; i++)
 	{
 		count++;
@@ -136,7 +130,7 @@ int count_string(char *string, int start, char end_character)        //return po
 	return (start + count);
 }
 
-char compare_two_strings(char *str1, char *str2, int length)		//comparing two strings, returns 1 if equal
+char compare_two_strings(char *str1, char *str2, int length)			//comparing two strings, returns 1 if equal
 {
 	int i;
 	for(i = 0; i < length; i++)
@@ -150,8 +144,7 @@ char compare_two_strings(char *str1, char *str2, int length)		//comparing two st
 		return 0;
 }
 
-
-void gps_get_data(char *received_frame, T_GPS_data *data)
+void gps_get_data(char *received_frame, T_GPS_data *data)				//main function for processing raw GPS data
 {
 	
 	T_GPS_msgs *msg;
@@ -159,7 +152,7 @@ void gps_get_data(char *received_frame, T_GPS_data *data)
 	cli();
 	
 	msg = (T_GPS_msgs*)malloc(sizeof(T_GPS_msgs));
-	int  start = 0, stop = 1; //length = 0
+	int  start = 0, stop = 1;
 	
 	msg->GPRMC_fresh = 0;
 	msg->GPVTG_fresh = 0;
@@ -170,24 +163,21 @@ void gps_get_data(char *received_frame, T_GPS_data *data)
 	//msg.GPGSV3_fresh = 0;
 	//msg.GPGSV4_fresh = 0;
 	
-	stop = count_string(received_frame, start, '\n');		//stop position of first message out of frame
-	while(stop != 0)									//NMEA messages are always less than 83 characters
+	stop = count_string(received_frame, start, '\n');			//find end of first message ending with \n
+	while(stop != 0)											//split frame to messages
 	{
-		start = frame_split(received_frame, msg, start, stop);	//split message and return start position for new message
-		stop = count_string(received_frame, ++start, '\n');	//find next end of message
-		//length = stop - start;							
+		start = frame_split(received_frame, msg, start, stop);	//split frame and return start position for new message
+		stop = count_string(received_frame, ++start, '\n');		//find next end of message ending with \n						
 	}
 
 	free(received_frame);
-	//_delay_ms(10);
 	parse_data(data, msg);
 	
 	free(msg);
-	//_delay_ms(10);
 	sei();
 }
 
-char parseHex(char c)				// read a Hex value and return the decimal equivalent
+char parseHex(char c)													//read a Hex value and return the decimal equivalent
 {
 	if (c < '0')
 		return 0;
@@ -200,7 +190,7 @@ char parseHex(char c)				// read a Hex value and return the decimal equivalent
 	// if (c > 'F')
 	return 0;
 }
-char check_checksum(char *message)			//calculate checksum from all characters between $ and * compare it to received checksum after * in NMEA message
+char check_checksum(char *message)										//calculate checksum from characters between $ and * compare it to received checksum after
 {
 	int start = 0, stop = 0, rcv_checksum, i;
 	char calc_checksum, rcv_checksum_byte[2];
@@ -209,11 +199,11 @@ char check_checksum(char *message)			//calculate checksum from all characters be
 	rcv_checksum_byte[0] = message[stop + 1];
 	rcv_checksum_byte[1] = message[stop + 2];
 	
-	rcv_checksum = parseHex(rcv_checksum_byte[0]) * 16;		//convert received ASCII hex character to number
+	rcv_checksum = parseHex(rcv_checksum_byte[0]) * 16;	//convert received ASCII hex character to number
 	rcv_checksum += parseHex(rcv_checksum_byte[1]);
 	
 	calc_checksum = message[1];
-	for(i = 2; i < stop; i++)				//calculate checksum
+	for(i = 2; i < stop; i++)							//calculate checksum
 	{
 		calc_checksum ^= message[i];
 	}
@@ -224,7 +214,7 @@ char check_checksum(char *message)			//calculate checksum from all characters be
 		return 0;
 }
 
-int split_message(char *source, char *target, int start, int stop)	//copy data from source to target array between start and stop index
+int split_message(char *source, char *target, int start, int stop)		//copy characters from source to target array between start and stop index
 {
 	int i;
 	
@@ -233,6 +223,7 @@ int split_message(char *source, char *target, int start, int stop)	//copy data f
 		target[i - start] = source[i];
 	}
 	target[++i] = '\0';
+	
 	return stop;
 }
 void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fresh messages
@@ -240,25 +231,19 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 	volatile int start = 7, stop = 0;	
 
 	//cli();
-	/*nokia_lcd_clear();
-	nokia_lcd_set_cursor(0,0);
-	nokia_lcd_write_string(msg->GPRMC_msg,1);
-	nokia_lcd_render();
-	
-*/
 
-	if(msg->GPRMC_msg[18] == 'A')	//parse data only if messages are valid
+	if(msg->GPRMC_msg[18] == 'A')			//parse data only if messages are valid
 	{
 		data->valid = 1;
 	}
-	else//if(msg->GPRMC_msg[18] == 'V')		//if invalid messages return from function
+	else//if(msg->GPRMC_msg[18] == 'V')		//if messages are invalid return from function
 	{
 		data->valid = 0;
 		return;						
 	}
 
 	//GPRMC=========================================================================================
-	if(msg->GPRMC_fresh == 1)												//minimum GPS data
+	if(msg->GPRMC_fresh == 1)						//minimum GPS data
 	{
 		if(check_checksum(msg->GPRMC_msg) == 1)		//parse only if received and calculated checksum are same
 		{
@@ -273,7 +258,7 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 	
 			start += 2;
 			stop = count_string(&msg->GPRMC_msg[0], start, ',');
-			start = split_message(&msg->GPRMC_msg[0], &data->longitudeNMEA[0], start, stop);		//longitude
+			start = split_message(&msg->GPRMC_msg[0], &data->longitudeNMEA[0], start, stop);	//longitude
 			data->lon_dir = msg->GPRMC_msg[++start];
 			data->longitude_deg = NMEAtoDeg(&data->longitudeNMEA[0]);
 	
@@ -283,7 +268,7 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 	
 			start++;
 			stop = count_string(&msg->GPRMC_msg[0], start, ',');
-			start = split_message(&msg->GPRMC_msg[0], &data->course[0], start, stop);			//course
+			start = split_message(&msg->GPRMC_msg[0], &data->course[0], start, stop);			//course in degrees
 	
 			start++;
 			stop = count_string(&msg->GPRMC_msg[0], start, ',');
@@ -292,14 +277,14 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 		}
 	}
 	//GPVTG==========================================================================================
-	start = 7;														//speed and track info
+	start = 7;										//speed and track info
 	stop = 0;
 	if(msg->GPVTG_fresh == 1)
 	{
 		if(check_checksum(msg->GPVTG_msg) == 1)		//parse only if received and calculated checksum are same
 		{
 			stop = count_string(&msg->GPVTG_msg[0], start, ',');
-			start = split_message(&msg->GPVTG_msg[0], &data->course[0], start, stop);		//course
+			start = split_message(&msg->GPVTG_msg[0], &data->course[0], start, stop);		//course in degrees
 		
 			start += 6;
 			stop = count_string(&msg->GPVTG_msg[0], start, ',');
@@ -307,12 +292,12 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 		
 			start += 3;
 			stop = count_string(&msg->GPVTG_msg[0], start, ',');
-			start = split_message(&msg->GPVTG_msg[0], &data->speed_kmh[0], start, stop);		//speed in kmh
+			start = split_message(&msg->GPVTG_msg[0], &data->speed_kmh[0], start, stop);	//speed in kmh
 		
 		}
 	}
 	//GPGGA==============================================================================================
-	start = 7;													//GPS fix info
+	start = 7;										//GPS fix info
 	stop = 0;
 	if(msg->GPGGA_fresh == 1)
 	{
@@ -329,7 +314,7 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 		
 			start += 2;
 			stop = count_string(&msg->GPGGA_msg[0], start, ',');
-			start = split_message(&msg->GPGGA_msg[0], &data->longitudeNMEA[0], start, stop);		//longitude
+			start = split_message(&msg->GPGGA_msg[0], &data->longitudeNMEA[0], start, stop);	//longitude
 			data->lon_dir = msg->GPGGA_msg[++start];
 			data->longitude_deg = NMEAtoDeg(&data->longitudeNMEA[0]);
 		
@@ -345,23 +330,25 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 		}
 	}
 	//GPGSA==============================================================================================
-	/*start = 7;												//IDs of active satellites
+	/*start = 7;									//IDs of active satellites
 	stop = 0;
-	if(check_checksum(msg.GPGSA_msg) == 1)		//parse only if received and calculated checksum are same
+	if(msg->GPGSA_fresh == 1)
 	{
-		if(msg.GPGSA_fresh == 1)
+		if(check_checksum(msg->GPGSA_msg) == 1)		//parse only if received and calculated checksum are same
 		{
 			
+		
 		}
 	}
+	
 	*/
 	
 	//GPGSV==============================================================================================
-	start = 11;													//number and IDs of satellites in view
+	start = 11;										//number and IDs of satellites in view
 	stop = 0;
 	if(msg->GPGSV1_fresh == 1)
 	{
-		if(check_checksum(msg->GPGSV1_msg) == 1)		//parse only if received and calculated checksum are same
+		if(check_checksum(msg->GPGSV1_msg) == 1)	//parse only if received and calculated checksum are same
 		{
 			stop = count_string(&msg->GPGSV1_msg[0], start, ',');
 			start = split_message(&msg->GPGSV1_msg[0], &data->num_of_view_sats[0], start, stop);	//number of satellites in view
@@ -393,7 +380,7 @@ void parse_data(T_GPS_data *data,  T_GPS_msgs *msg)						//analyze data from fre
 	//sei();
 }
 
-float NMEAtoDeg(char *NMEA)					//convert NMEA latitude and longitude format to degrees
+float NMEAtoDeg(char *NMEA)												//convert NMEA latitude and longitude format to degrees format
 {
 	char decimal[4] ;
 	char fraction[7] ;
