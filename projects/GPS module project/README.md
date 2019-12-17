@@ -12,8 +12,8 @@
 
 ## Introduction
 
-Result of this project should be working UART communication between GPS module and microcontroller ATmega328p. 
-Recieved data should be displayed on Nokia 5110 display and stored in PC.
+Result of this project is working UART communication between GPS module and microcontroller ATmega2560. 
+The received data is shown on the Nokia 5110 display and sent via UART to the PC.
 
 
 ## Hardware
